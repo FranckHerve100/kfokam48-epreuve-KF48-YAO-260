@@ -5,11 +5,13 @@ import java.time.Instant;
 import org.springframework.boot.test.context.TestComponent;
 
 import com.kfokam48.presence.domain.Etudiant;
+import com.kfokam48.presence.domain.Exercice;
 import com.kfokam48.presence.domain.Presence;
 import com.kfokam48.presence.domain.Promotion;
 import com.kfokam48.presence.domain.Session;
 import com.kfokam48.presence.domain.SourcePresence;
 import com.kfokam48.presence.repository.EtudiantRepository;
+import com.kfokam48.presence.repository.ExerciceRepository;
 import com.kfokam48.presence.repository.PresenceRepository;
 import com.kfokam48.presence.repository.PromotionRepository;
 import com.kfokam48.presence.repository.SessionRepository;
@@ -24,13 +26,15 @@ public class JeuDEssai {
     private final EtudiantRepository etudiants;
     private final SessionRepository sessions;
     private final PresenceRepository presences;
+    private final ExerciceRepository exercices;
 
     public JeuDEssai(PromotionRepository promotions, EtudiantRepository etudiants, SessionRepository sessions,
-                     PresenceRepository presences) {
+                     PresenceRepository presences, ExerciceRepository exercices) {
         this.promotions = promotions;
         this.etudiants = etudiants;
         this.sessions = sessions;
         this.presences = presences;
+        this.exercices = exercices;
     }
 
     public Promotion promotion() {
@@ -52,5 +56,9 @@ public class JeuDEssai {
 
     public Presence presence(Session session, Etudiant etudiant) {
         return presences.save(new Presence(session, etudiant, SourcePresence.ETUDIANT, Instant.now()));
+    }
+
+    public Exercice exercice(Session session, Etudiant auteur) {
+        return exercices.save(new Exercice(session, auteur, "https://github.com/essai/" + (++compteur), Instant.now()));
     }
 }
