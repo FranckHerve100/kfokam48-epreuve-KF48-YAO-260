@@ -1,0 +1,14 @@
+# Contexte de build = racine du dépôt : seuls api/ et backend/ sont utiles à l'image
+**/target
+**/node_modules
+**/dist
+.git
+.github
+.env
+.idea
+.vscode
+infra/
+postman/
+docs/
+newman/
+scripts/
