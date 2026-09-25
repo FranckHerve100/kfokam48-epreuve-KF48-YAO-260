@@ -1,5 +1,5 @@
 target/
-nodes_modules/
+node_modules/
 dist/
 *.log
 .env
@@ -7,3 +7,5 @@ dist/
 .vscode/
 claude/
 .claude/
+newman/
+*.iml
