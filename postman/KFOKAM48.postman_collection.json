@@ -1,0 +1,258 @@
+{
+  "info": {
+    "_postman_id": "dc71e9a3-7a52-5ecf-b920-ad16e718233d",
+    "name": "KFOKAM48 Présence & Relecture",
+    "description": "Tests de bout en bout de l'API (api/contrat.yaml). Exécution : voir postman/README.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00-Santé",
+      "item": [
+        {
+          "name": "Santé UP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('application UP', () => pm.expect(pm.response.json().status).to.eql('UP'));",
+                  "pm.test('base UP', () => pm.expect(pm.response.json().components.db.status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sonde readiness",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health/readiness",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health",
+                "readiness"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Version et commit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('version présente', () => pm.expect(pm.response.json().build.version).to.be.a('string'));",
+                  "pm.test('commit présent', () => pm.expect(pm.response.json().git.commit.id).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "info"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Métriques Prometheus",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('métriques JVM', () => pm.expect(pm.response.text()).to.include('jvm_memory_used_bytes'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/prometheus",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "prometheus"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Contrat imposé",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('OpenAPI 3.0.3', () => pm.expect(pm.response.text()).to.include('openapi: 3.0.3'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/contrat.yaml",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contrat.yaml"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Implémentation (springdoc)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('document OpenAPI', () => pm.expect(pm.response.json().openapi).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v3/api-docs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v3",
+                "api-docs"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "99-Erreurs",
+      "item": [
+        {
+          "name": "Route inconnue → 404 RESSOURCE_INCONNUE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 404', () => pm.response.to.have.status(404));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code RESSOURCE_INCONNUE', () => pm.expect(corps.code).to.eql('RESSOURCE_INCONNUE'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inexistant",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inexistant"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Verbe non supporté → 405 REQUETE_INVALIDE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 405', () => pm.response.to.have.status(405));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code REQUETE_INVALIDE', () => pm.expect(corps.code).to.eql('REQUETE_INVALIDE'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/contrat.yaml",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contrat.yaml"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": []
+}
