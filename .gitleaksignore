@@ -1,0 +1,3 @@
+# Faux positifs Gitleaks, un par ligne (empreinte commit:fichier:règle:ligne), chacun justifié.
+# infra/sonar/init.sh : `curl -u "$SONAR_TOKEN:"` passe une variable d'environnement lue dans .env (ignoré), pas un secret.
+c74c3fb91ba7f0184e86da17e34148fc65305c78:infra/sonar/init.sh:curl-auth-user:48
