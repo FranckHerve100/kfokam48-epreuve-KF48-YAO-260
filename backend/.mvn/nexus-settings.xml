@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Miroir Nexus OPTIONNEL : toutes les dépendances passent par le groupe maven-public (cache de Maven Central).
+  Utilisation : NEXUS_URL=http://localhost:8081 ./mvnw -s .mvn/nexus-settings.xml verify   (docs/INFRA.md)
+  Sans -s, Maven utilise Maven Central directement : Nexus n'est jamais nécessaire.
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+    <mirrors>
+        <mirror>
+            <id>nexus</id>
+            <name>Nexus maven-public</name>
+            <mirrorOf>*</mirrorOf>
+            <url>${env.NEXUS_URL}/repository/maven-public/</url>
+        </mirror>
+    </mirrors>
+</settings>
