@@ -32,7 +32,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 class ContratCouvertureIT {
 
     /** Opérations livrées, au format « VERBE /chemin » du contrat. */
-    static final List<String> OPERATIONS_LIVREES = List.of();
+    static final List<String> OPERATIONS_LIVREES = List.of(
+            "POST /api/sessions");
 
     @Autowired
     private MockMvc mvc;
