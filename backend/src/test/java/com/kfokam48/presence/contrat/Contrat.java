@@ -9,6 +9,8 @@ import org.springframework.test.web.servlet.ResultMatcher;
 
 import com.atlassian.oai.validator.OpenApiInteractionValidator;
 import com.atlassian.oai.validator.mockmvc.OpenApiValidationMatchers;
+import com.atlassian.oai.validator.report.LevelResolver;
+import com.atlassian.oai.validator.report.ValidationReport;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
@@ -23,12 +25,25 @@ public final class Contrat {
     private static final OpenApiInteractionValidator VALIDATEUR =
             OpenApiInteractionValidator.createForSpecificationUrl(EMPLACEMENT).build();
 
+    /** Même contrat, mais la requête n'est pas validée : pour les cas d'erreur, où elle est invalide exprès. */
+    private static final OpenApiInteractionValidator VALIDATEUR_REPONSE =
+            OpenApiInteractionValidator.createForSpecificationUrl(EMPLACEMENT)
+                    .withLevelResolver(LevelResolver.create()
+                            .withLevel("validation.request", ValidationReport.Level.IGNORE)
+                            .build())
+                    .build();
+
     private Contrat() {
     }
 
     /** Vérifie que la requête et la réponse MockMvc respectent le contrat (statut, corps, schémas). */
     public static ResultMatcher conforme() {
         return OpenApiValidationMatchers.openApi().isValid(VALIDATEUR);
+    }
+
+    /** Vérifie seulement la réponse (statut déclaré, schéma { code, message }) : requête volontairement invalide. */
+    public static ResultMatcher reponseConforme() {
+        return OpenApiValidationMatchers.openApi().isValid(VALIDATEUR_REPONSE);
     }
 
     /** Opérations du contrat sous la forme « VERBE /chemin ». */
