@@ -10,7 +10,7 @@ Application web de la formation KFOKAM48 : le formateur ouvre une session et pro
 |---|---|
 | Backend | Java 17, Spring Boot 3.5, Maven (wrapper `mvnw`), PostgreSQL 16, Flyway |
 | Frontend | **React (Vite + TypeScript)** : trois écrans simples n'ont besoin ni du rendu serveur de Next.js ni de l'outillage d'Angular, c'est l'option la plus légère à construire, tester et démarrer depuis un clone vierge |
-| Démarrage | `docker compose up --build` (section « Démarrer ») |
+| Démarrage | `docker compose up --build` : PostgreSQL, API et écrans (section « Démarrer ») |
 
 ## Démarrer
 
@@ -22,10 +22,11 @@ cd kfokam48-epreuve-KF48-YAO-260
 docker compose up --build
 ```
 
-L'application est prête quand le conteneur `backend` est *healthy* (environ une minute au premier build). Arrêt : `Ctrl+C`, puis `docker compose down -v` pour effacer aussi la base.
+L'application est prête quand les conteneurs `backend` et `frontend` sont *healthy* (deux à trois minutes au premier build). Arrêt : `Ctrl+C`, puis `docker compose down -v` pour effacer aussi la base.
 
 | Adresse | Contenu |
 |---|---|
+| **http://localhost:5173** | **Application : écrans formateur, étudiant et relecteur** |
 | http://localhost:8080/swagger-ui.html | Swagger UI : définitions « Contrat imposé » et « Implémentation » |
 | http://localhost:8080/api/… | API REST ([contrat](api/contrat.yaml)) |
 | http://localhost:8080/actuator/health | Santé (application et base) ; aussi `/info`, `/metrics`, `/prometheus` |

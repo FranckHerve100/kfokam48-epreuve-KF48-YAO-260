@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tests de fumée et de non-régression contre l'application démarrée (docker compose up).
 # Usage : bash scripts/smoke.sh [URL]   (défaut : http://localhost:8080 ou $BASE_URL)
+#         FRONTEND_URL=aucun pour ne pas vérifier le frontend (défaut : http://localhost:5173)
 # Sort en erreur au premier échec. Dépendances : bash, curl.
 set -euo pipefail
 
@@ -71,5 +72,14 @@ verifier "Code inconnu (RG3)"         POST /api/presences            400 '"code"
 # ── 06 Tableau ──────────────────────────────────────────────────────────────
 verifier "Tableau de la promotion (EF6)" GET "/api/tableau?promotionId=1" 200 '"relecturesEnAttente"'
 verifier "Tableau sans promotionId"      GET /api/tableau               404 '"code":"PROMOTION_INCONNUE"'
+
+# ── Frontend (Nginx) : écrans servis et /api relayé vers le backend ─────────
+FRONTEND_URL="${FRONTEND_URL:-http://localhost:5173}"
+if [[ "$FRONTEND_URL" != "aucun" ]]; then
+  BASE_URL="$FRONTEND_URL"
+  verifier "Frontend : accueil"          GET /                 200 'KFOKAM48'
+  verifier "Frontend : route /etudiant"  GET /etudiant         200 '<div id="root">'
+  verifier "Frontend : relais /api"      GET /api/promotions   200 '"nom":"KF48 Yaoundé"'
+fi
 
 echo "🎉 $TOTAL vérifications réussies"

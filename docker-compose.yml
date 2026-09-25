@@ -1,4 +1,4 @@
-# Application complète : docker compose up --build
+# Application complète : docker compose up --build → http://localhost:5173
 # Aucune dépendance vers l'outillage optionnel (SonarQube, Nexus : infra/docker-compose.infra.yml).
 name: kfokam48
 
@@ -38,6 +38,20 @@ services:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        REGISTRY: ${REGISTRY:-docker.io}
+    image: kfokam48/presence-frontend:0.1.0-SNAPSHOT
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      backend:
         condition: service_healthy
     restart: unless-stopped
 
