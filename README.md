@@ -43,6 +43,8 @@ La collection Postman s'importe aussi dans Postman ([postman/README.md](postman/
 
 **Développement du backend** (Java 17) : `cd backend && ./mvnw verify` lance tous les tests sur H2, sans base installée.
 
+**Développement du frontend** (Node 22+) : avec le backend démarré (`docker compose up`), `cd frontend && npm ci && npm run dev` ouvre http://localhost:5173 ; Vite relaie `/api` vers http://localhost:8080. `npm run build` produit `frontend/dist/`.
+
 ## Documentation
 
 | Document | Contenu |
@@ -61,7 +63,7 @@ La collection Postman s'importe aussi dans Postman ([postman/README.md](postman/
 /postman    collection Postman / Newman
 /scripts    smoke.sh (tests de fumée)
 /backend    Spring Boot : API, migrations Flyway, tests
-/frontend   React (à venir)
+/frontend   React + Vite + TypeScript : src/api/client.ts (seul point d'appel HTTP), src/pages/ (3 écrans)
 ```
 
 ## Suivi
