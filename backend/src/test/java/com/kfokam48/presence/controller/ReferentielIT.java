@@ -64,4 +64,24 @@ class ReferentielIT {
                 .andExpect(jsonPath("$.code").value("PROMOTION_INCONNUE"))
                 .andExpect(Contrat.conforme());
     }
+
+    @Test
+    void Q1_etudiantsDUnePromotion_renvoie200AvecIdEtNom() throws Exception {
+        Promotion promotion = jeu.promotion();
+        jeu.etudiant(promotion);
+
+        mvc.perform(get("/api/promotions/{id}/etudiants", promotion.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").isNumber())
+                .andExpect(Contrat.conforme());
+    }
+
+    @Test
+    void Q1_etudiantsDUnePromotionInconnue_renvoie404PromotionInconnue() throws Exception {
+        mvc.perform(get("/api/promotions/{id}/etudiants", 999999))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PROMOTION_INCONNUE"))
+                .andExpect(Contrat.conforme());
+    }
 }

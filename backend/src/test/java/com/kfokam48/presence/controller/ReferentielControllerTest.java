@@ -64,4 +64,13 @@ class ReferentielControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("REQUETE_INVALIDE"));
     }
+
+    @Test
+    void etudiants_renvoie200() throws Exception {
+        when(referentielService.etudiantsDeLaPromotion(1L)).thenReturn(List.of(new ReferenceDto(4L, "Abena Mvondo")));
+
+        mvc.perform(get("/api/promotions/1/etudiants"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].nom").value("Abena Mvondo"));
+    }
 }

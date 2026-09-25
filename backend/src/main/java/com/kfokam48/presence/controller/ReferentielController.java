@@ -44,4 +44,13 @@ public class ReferentielController {
     public List<SessionDto> sessions(@PathVariable Long id) {
         return referentielService.sessionsDeLaPromotion(id);
     }
+
+    @GetMapping("/{id}/etudiants")
+    @Operation(summary = "Étudiants d'une promotion, triés par nom (l'étudiant se choisit dans la liste, Q1)")
+    @ApiResponse(responseCode = "200", description = "Étudiants")
+    @ApiResponse(responseCode = "404", description = "PROMOTION_INCONNUE",
+            content = @Content(schema = @Schema(implementation = ErreurDto.class)))
+    public List<ReferenceDto> etudiants(@PathVariable Long id) {
+        return referentielService.etudiantsDeLaPromotion(id);
+    }
 }

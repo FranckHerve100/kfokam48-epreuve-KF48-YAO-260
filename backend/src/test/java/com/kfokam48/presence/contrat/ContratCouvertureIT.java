@@ -36,7 +36,8 @@ class ContratCouvertureIT {
             "POST /api/sessions",
             "GET /api/promotions",
             "GET /api/promotions/{id}/sessions",
-            "POST /api/presences");
+            "POST /api/presences",
+            "GET /api/promotions/{id}/etudiants");
 
     @Autowired
     private MockMvc mvc;
