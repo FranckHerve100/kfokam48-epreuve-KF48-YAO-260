@@ -23,7 +23,7 @@
         <git-commit-id-plugin.version>9.2.0</git-commit-id-plugin.version>
         <archunit.version>1.4.2</archunit.version>
         <swagger-request-validator.version>2.46.1</swagger-request-validator.version>
-        <jacoco.version>0.8.14</jacoco.version>
+        <jacoco.version>0.8.15</jacoco.version>
         <sonar-maven-plugin.version>5.8.0.7211</sonar-maven-plugin.version>
         <!-- Couverture minimale exigée sur la couche service (CONTRIBUTING, Definition of Done) -->
         <jacoco.couverture.service>0.70</jacoco.couverture.service>
