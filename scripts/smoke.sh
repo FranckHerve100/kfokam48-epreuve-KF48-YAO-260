@@ -68,4 +68,8 @@ verifier "Étudiants d'une promotion"  GET /api/promotions/1/etudiants 200 '"nom
 verifier "Code expiré (RG1)"          POST /api/presences            410 '"code":"CODE_EXPIRE"' '{"code":"EXPR22","etudiantId":1}'
 verifier "Code inconnu (RG3)"         POST /api/presences            400 '"code":"CODE_INCONNU"' '{"code":"Z9Z9Z9","etudiantId":1}'
 
+# ── 06 Tableau ──────────────────────────────────────────────────────────────
+verifier "Tableau de la promotion (EF6)" GET "/api/tableau?promotionId=1" 200 '"relecturesEnAttente"'
+verifier "Tableau sans promotionId"      GET /api/tableau               404 '"code":"PROMOTION_INCONNUE"'
+
 echo "🎉 $TOTAL vérifications réussies"
