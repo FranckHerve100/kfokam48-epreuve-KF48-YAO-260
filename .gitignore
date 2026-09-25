@@ -1,9 +1,9 @@
 target/
-nodes_modules/
+node_modules/
 dist/
 *.log
 .env
 .idea/
 .vscode/
-claude/
-.claude/
+newman/
+*.iml
