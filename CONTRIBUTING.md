@@ -41,10 +41,10 @@ Exemples : `test(back): présence refusée 16 min après l'ouverture (RG1)` · `
 Un ticket est terminé quand :
 
 - ses critères d'acceptation sont couverts par des tests automatisés qui passent, nommés d'après les RG ;
-- la suite complète passe : `./mvnw -B -ntp clean verify` (unitaires, intégration, conformité au contrat, ArchUnit, couverture JaCoCo ≥ 70 % sur les services) ;
-- l'application démarre avec `docker compose up -d --build --wait` et `bash scripts/smoke.sh` passe ;
+- la suite complète passe **en local** : `./mvnw -B -ntp clean verify` (unitaires, intégration, conformité au contrat, ArchUnit, couverture JaCoCo ≥ 70 % sur les services) — la CI ne rejoue que les tests unitaires ;
+- l'application démarre avec `docker compose up -d --build --wait`, puis `bash scripts/smoke.sh` et la collection Newman passent (porte locale, hors CI) ;
 - chaque critère Given / When / Then de l'issue a été vérifié à la main et coché, avec la preuve en commentaire ;
-- la CI est verte sur la PR, qui cite l'issue, les EF et les RG ;
+- la CI est verte sur la PR (`prebuild`, `tests-unitaires`, `sonar` s'il est configuré), qui cite l'issue, les EF et les RG ;
 - le contrat, les migrations, D2 et la documentation touchée sont à jour ;
 - la PR est fusionnée par merge commit et `main` a été revérifié après la fusion ;
 - le nombre de tests n'a pas diminué et la couverture n'a pas baissé.

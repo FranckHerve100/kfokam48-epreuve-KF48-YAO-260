@@ -70,7 +70,9 @@ class SessionServiceTest {
         when(generateur.nouveauCode()).thenReturn("PRIS22");
         when(sessions.existsByCodeAndExpirationAtGreaterThanEqual(eq("PRIS22"), any())).thenReturn(true);
 
-        assertThatThrownBy(() -> service.ouvrir(new OuvertureSessionDemande("Cours 1", 1L)))
+        OuvertureSessionDemande demande = new OuvertureSessionDemande("Cours 1", 1L);
+
+        assertThatThrownBy(() -> service.ouvrir(demande))
                 .isInstanceOf(IllegalStateException.class);
         verify(sessions, never()).save(any());
     }
@@ -79,7 +81,9 @@ class SessionServiceTest {
     void EF1_promotionInconnue_renvoie400PromotionInconnue() {
         when(promotions.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.ouvrir(new OuvertureSessionDemande("Cours 1", 99L)))
+        OuvertureSessionDemande demande = new OuvertureSessionDemande("Cours 1", 99L);
+
+        assertThatThrownBy(() -> service.ouvrir(demande))
                 .isInstanceOfSatisfying(PromotionInconnueException.class, e -> {
                     assertThat(e.getStatut()).isEqualTo(HttpStatus.BAD_REQUEST);
                     assertThat(e.getCode()).isEqualTo("PROMOTION_INCONNUE");

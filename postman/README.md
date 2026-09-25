@@ -21,4 +21,4 @@ npx --yes newman run postman/KFOKAM48.postman_collection.json -e postman/local.p
 docker compose down -v
 ```
 
-Rapport JUnit (utilisé par la CI) : ajouter `--reporters cli,junit --reporter-junit-export newman/junit.xml` (le dossier `newman/` est ignoré par Git).
+Rapport JUnit : ajouter `--reporters cli,junit --reporter-junit-export newman/junit.xml` (le dossier `newman/` est ignoré par Git).
