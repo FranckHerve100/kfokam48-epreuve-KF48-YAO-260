@@ -28,3 +28,22 @@ réponses validées contre `api/contrat.yaml` (validateur Atlassian) ; fumée et
 conteneurs ; démarrage depuis un clone vierge ; parcours des trois écrans dans Chrome à 1280 et 375 px.
 Erreurs trouvées ainsi : page d'erreur HTML de Tomcat sur une URL illisible, `git.properties` vide dans l'image,
 code de session qui débordait de sa carte, page trop large sur téléphone.
+
+## Étape 3 — Enveloppe
+**Fait :** bug « deux étudiants pointent en même temps, un seul apparaît » : issue #50 ouverte avant tout code,
+test `NR_50` commité rouge (deux transactions réelles entrelacées), puis correctif — le tirage relancé par une
+présence s'exécute après la validation de la présence, dans sa propre transaction (PR #51). Changement de besoin
+« deux relecteurs, note = moyenne, provisoire si une seule » : issues #52 et #53, analyse remise à jour d'abord
+(cahier des charges v2, D2, D4), contrat (`moyenneProvisoire`), migration `V2__deux_relecteurs.sql` ajoutée sans
+toucher V1, tirage de deux relecteurs, statut `PARTIELLEMENT_RELU`, tableau et écran formateur ; branche et PR
+distinctes du correctif.
+**Bloqué :** la cause du bug n'était pas visible dans le code des présences lui-même : elle venait du tirage relancé
+dans la même transaction. Il a fallu entrelacer deux transactions à la main dans le test pour la reproduire à coup sûr.
+**IA :** diagnostic du bug, test de concurrence, correctif, migration et adaptation du tirage et du tableau.
+Vérifié : test `NR_50` rouge avant le correctif puis vert ; 5 pointages parallèles sur PostgreSQL → 5 × 201 et un
+seul relecteur ; migration V2 appliquée sur une base v0.1 remplie (mêmes volumes de données avant et après) ;
+parcours complet à deux relecteurs sur PostgreSQL (note provisoire puis moyenne).
+**Ce que j'ai sorti du périmètre pour absorber le changement, et pourquoi :** EF11 (Could) puis EF10 (Should). Le
+changement est un Must qui arrive tard ; EF10 aurait dû être refaite (note provisoire, deux commentaires) alors que
+la note reste consultable par le formateur, et EF11 est la seule Could. EF7, EF8 et EF9 restent prévues pour la v1.0.
+Écrit aussi au §10 du cahier des charges et sur les issues #15 et #16.
