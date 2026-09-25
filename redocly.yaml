@@ -1,0 +1,9 @@
+# Lint du contrat d'API (job CI contract-lint)
+extends:
+  - minimal
+rules:
+  security-defined: off
+  # Les 5 opérations imposées n'ont pas d'operationId et ne doivent pas être modifiées
+  operation-operationId: off
+  # Le serveur localhost fait partie du contrat imposé
+  no-server-example.com: off
