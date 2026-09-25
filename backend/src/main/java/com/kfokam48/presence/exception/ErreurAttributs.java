@@ -15,6 +15,9 @@ import org.springframework.web.context.request.WebRequest;
 @Component
 public class ErreurAttributs extends DefaultErrorAttributes {
 
+    private static final String CODE = "code";
+    private static final String MESSAGE = "message";
+
     @Override
     public Map<String, Object> getErrorAttributes(WebRequest requete, ErrorAttributeOptions options) {
         Object statut = super.getErrorAttributes(requete, ErrorAttributeOptions.defaults()).get("status");
@@ -22,14 +25,14 @@ public class ErreurAttributs extends DefaultErrorAttributes {
 
         Map<String, Object> corps = new LinkedHashMap<>();
         if (code == 404) {
-            corps.put("code", "RESSOURCE_INCONNUE");
-            corps.put("message", "Cette adresse n'existe pas dans l'API.");
+            corps.put(CODE, "RESSOURCE_INCONNUE");
+            corps.put(MESSAGE, "Cette adresse n'existe pas dans l'API.");
         } else if (code >= 400 && code < 500) {
-            corps.put("code", GlobalExceptionHandler.REQUETE_INVALIDE);
-            corps.put("message", "La requête est invalide.");
+            corps.put(CODE, GlobalExceptionHandler.REQUETE_INVALIDE);
+            corps.put(MESSAGE, "La requête est invalide.");
         } else {
-            corps.put("code", "ERREUR_INTERNE");
-            corps.put("message", "Une erreur interne est survenue. Réessayez plus tard.");
+            corps.put(CODE, "ERREUR_INTERNE");
+            corps.put(MESSAGE, "Une erreur interne est survenue. Réessayez plus tard.");
         }
         return corps;
     }

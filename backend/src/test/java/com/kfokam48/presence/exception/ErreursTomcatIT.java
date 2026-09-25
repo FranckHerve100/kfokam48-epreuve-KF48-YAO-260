@@ -28,10 +28,12 @@ class ErreursTomcatIT {
     void B4_urlMalEncodee_renvoie400JsonAuFormatDuContrat() throws Exception {
         String reponse = requeteBrute("GET /api/%zz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n");
 
-        assertThat(reponse).startsWith("HTTP/1.1 400");
-        assertThat(reponse).containsIgnoringCase("Content-Type: application/json");
-        assertThat(reponse).contains("\"code\":\"REQUETE_INVALIDE\"");
-        assertThat(reponse).doesNotContain("<html").doesNotContain("Tomcat");
+        assertThat(reponse)
+                .startsWith("HTTP/1.1 400")
+                .containsIgnoringCase("Content-Type: application/json")
+                .contains("\"code\":\"REQUETE_INVALIDE\"")
+                .doesNotContain("<html")
+                .doesNotContain("Tomcat");
     }
 
     private String requeteBrute(String requete) throws Exception {

@@ -15,11 +15,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * Contrôleur de test, hors du paquet scanné : importé explicitement par ErreursIT pour provoquer
+ * Contrôleur d'essai, hors du paquet scanné : importé explicitement par ErreursIT pour provoquer
  * chaque famille d'erreur sans dépendre d'une story.
  */
 @RestController
-public class ControleurDeTest {
+public class ControleurEssai {
 
     public record Demande(@NotBlank(message = "CHAMP_MANQUANT") String titre,
                           @NotNull(message = "CHAMP_MANQUANT") Long promotionId) {

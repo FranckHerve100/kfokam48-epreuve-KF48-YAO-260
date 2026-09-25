@@ -20,13 +20,13 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
-import com.kfokam48.test.ControleurDeTest;
+import com.kfokam48.test.ControleurEssai;
 
 /** Toute erreur renvoie { code, message } et rien d'autre, jamais de stack trace (B4, RG17, ENF4). */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(ControleurDeTest.class)
+@Import(ControleurEssai.class)
 class ErreursIT {
 
     @Autowired
