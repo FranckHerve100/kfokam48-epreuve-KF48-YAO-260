@@ -28,7 +28,7 @@ class TableauServiceTest {
 
     @Test
     void RG15_notesRecues12Et16_moyenne14Virgule00() {
-        promotion(1L, new LigneTableau(10L, "Abena", 3L, 2L, 14.0, 0L));
+        promotion(1L, new LigneTableau(10L, "Abena", 3L, 2L, 14.0, 0L, 0L));
 
         LigneTableauDto ligne = service.tableau("1").get(0);
 
@@ -39,7 +39,7 @@ class TableauServiceTest {
 
     @Test
     void RG15_moyenneArrondieADeuxDecimalesAuPlusProche() {
-        promotion(1L, new LigneTableau(10L, "Abena", 1L, 1L, 43.0 / 3, 0L), new LigneTableau(11L, "Boris", 1L, 1L, 14.125, 0L));
+        promotion(1L, new LigneTableau(10L, "Abena", 1L, 1L, 43.0 / 3, 0L, 0L), new LigneTableau(11L, "Boris", 1L, 1L, 14.125, 0L, 0L));
 
         List<LigneTableauDto> lignes = service.tableau("1");
 
@@ -49,14 +49,14 @@ class TableauServiceTest {
 
     @Test
     void H10_aucuneNoteRecue_moyenneNulle() {
-        promotion(1L, new LigneTableau(10L, "Abena", 0L, 0L, null, 0L));
+        promotion(1L, new LigneTableau(10L, "Abena", 0L, 0L, null, 0L, 0L));
 
         assertThat(service.tableau("1").get(0).moyenne()).isNull();
     }
 
     @Test
     void RG14_relectureNonRendue_compteeEnAttente() {
-        promotion(1L, new LigneTableau(10L, "Daniel", 1L, 0L, null, 1L));
+        promotion(1L, new LigneTableau(10L, "Daniel", 1L, 0L, null, 1L, 0L));
 
         assertThat(service.tableau("1").get(0).relecturesEnAttente()).isEqualTo(1);
     }
@@ -80,5 +80,32 @@ class TableauServiceTest {
     private void promotion(Long id, LigneTableau... lignes) {
         when(promotions.existsById(id)).thenReturn(true);
         when(etudiants.tableau(id)).thenReturn(List.of(lignes));
+    }
+
+    @Test
+    void RG15_uneNoteRetenueProvisoire_moyenneSignaleeProvisoire() {
+        promotion(1L, new LigneTableau(10L, "Abena", 1L, 1L, 15.0, 0L, 1L));
+
+        LigneTableauDto ligne = service.tableau("1").get(0);
+
+        assertThat(ligne.moyenne()).isEqualByComparingTo("15.00");
+        assertThat(ligne.moyenneProvisoire()).isTrue();
+    }
+
+    @Test
+    void RG15_notesRetenues14Et15_moyenne14Virgule50NonProvisoire() {
+        promotion(1L, new LigneTableau(10L, "Abena", 2L, 2L, 14.5, 0L, 0L));
+
+        LigneTableauDto ligne = service.tableau("1").get(0);
+
+        assertThat(ligne.moyenne()).isEqualTo(new BigDecimal("14.50"));
+        assertThat(ligne.moyenneProvisoire()).isFalse();
+    }
+
+    @Test
+    void H10_aucuneNote_moyenneNulleEtNonProvisoire() {
+        promotion(1L, new LigneTableau(10L, "Abena", 1L, 1L, null, 0L, 0L));
+
+        assertThat(service.tableau("1").get(0).moyenneProvisoire()).isFalse();
     }
 }
