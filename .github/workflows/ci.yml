@@ -1,5 +1,10 @@
 name: CI
 
+# Pipeline unique : prebuild → tests-unitaires → sonar → build.
+# Sur une PR vers main, il s'arrête à sonar ; le build ne s'exécute que sur la branche critique main.
+# Les tests d'intégration, la fumée docker compose et Newman font partie de la porte locale (CONTRIBUTING.md).
+# La sécurité (CodeQL, Gitleaks, dependency-review) est un workflow séparé : security.yml.
+
 on:
   pull_request:
     branches: [main]
@@ -12,49 +17,10 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: read
 
 jobs:
-  # Détermine quelles parties du dépôt ont changé, pour ne lancer que les jobs utiles
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      api: ${{ steps.filtre.outputs.api }}
-      backend: ${{ steps.filtre.outputs.backend }}
-      frontend: ${{ steps.filtre.outputs.frontend }}
-      docker: ${{ steps.filtre.outputs.docker }}
-      frontend-existe: ${{ steps.existe.outputs.frontend }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@v4
-        id: filtre
-        with:
-          filters: |
-            api:
-              - 'api/**'
-              - 'redocly.yaml'
-              - '.github/workflows/ci.yml'
-            backend:
-              - 'backend/**'
-              - 'api/**'
-              - '.github/workflows/ci.yml'
-            frontend:
-              - 'frontend/**'
-              - 'api/**'
-              - '.github/workflows/ci.yml'
-            docker:
-              - 'docker-compose.yml'
-              - '**/Dockerfile'
-              - '.dockerignore'
-              - 'scripts/**'
-              - 'postman/**'
-              - '.github/workflows/ci.yml'
-      - id: existe
-        run: echo "frontend=$([ -f frontend/package.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
-  contract-lint:
-    needs: changes
-    if: needs.changes.outputs.api == 'true'
+  # Contrat d'API valide et code qui compile
+  prebuild:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -63,10 +29,18 @@ jobs:
           node-version: 22
       - name: Lint du contrat d'API (Redocly)
         run: npx --yes @redocly/cli@2.54.3 lint api/contrat.yaml
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - name: Compilation
+        working-directory: backend
+        run: ./mvnw -B -ntp compile
 
-  backend:
-    needs: changes
-    if: needs.changes.outputs.backend == 'true'
+  # Tests unitaires, couverture JaCoCo et seuil de 70 % sur les services
+  tests-unitaires:
+    needs: prebuild
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -78,87 +52,28 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: maven
-      - name: Build, tests unitaires et d'intégration, couverture
-        run: ./mvnw -B -ntp verify
-      - name: Rapports de tests et de couverture
+      - name: Tests unitaires et couverture
+        run: ./mvnw -B -ntp test jacoco:report jacoco:check@seuil-service
+      - name: Classes compilées et rapports (réutilisés par sonar)
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: rapports-backend
+          name: resultats-tests
           path: |
+            backend/target/classes/
+            backend/target/test-classes/
             backend/target/surefire-reports/
-            backend/target/failsafe-reports/
             backend/target/site/jacoco/
           if-no-files-found: ignore
 
-  # Prêt pour le ticket #3 : ignoré tant que frontend/ n'existe pas
-  frontend:
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true' && needs.changes.outputs.frontend-existe == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run build
-
-  # Application conteneurisée de bout en bout : docker compose + tests de fumée + collection Newman
-  compose-smoke:
-    needs: [changes, backend]
-    if: >-
-      !cancelled() && needs.changes.result == 'success' && needs.backend.result != 'failure'
-      && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.docker == 'true')
-    runs-on: ubuntu-latest
-    env:
-      GIT_COMMIT: ${{ github.sha }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-      - name: Démarrer l'application (PostgreSQL + backend + données de démo)
-        run: docker compose up -d --build --wait
-      - name: Tests de fumée
-        run: bash scripts/smoke.sh
-      - name: Collection Postman (Newman)
-        run: >-
-          npx --yes newman@6.2.2 run postman/KFOKAM48.postman_collection.json
-          -e postman/local.postman_environment.json
-          --reporters cli,junit --reporter-junit-export newman/junit.xml
-      - name: Journaux des conteneurs
-        if: failure()
-        run: docker compose logs
-      - name: Rapport Newman
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: rapport-newman
-          path: newman/
-          if-no-files-found: ignore
-      - name: Arrêter et nettoyer
-        if: always()
-        run: docker compose down -v
-
-  # Analyse SonarQube OPTIONNELLE : exécutée seulement si la variable SONAR_HOST_URL et le secret
-  # SONAR_TOKEN sont définis (SonarQube Cloud ou serveur joignable). Jamais un check requis.
+  # Analyse SonarQube OPTIONNELLE : seulement si la variable SONAR_HOST_URL et le secret SONAR_TOKEN existent
   sonar:
-    needs: [changes, backend]
-    if: >-
-      !cancelled() && needs.backend.result == 'success' && vars.SONAR_HOST_URL != ''
+    needs: tests-unitaires
+    if: vars.SONAR_HOST_URL != ''
     runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - name: Secret SONAR_TOKEN absent → analyse ignorée
         if: env.SONAR_TOKEN == ''
@@ -167,12 +82,43 @@ jobs:
         if: env.SONAR_TOKEN != ''
         with:
           fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        if: env.SONAR_TOKEN != ''
+        with:
+          name: resultats-tests
+          path: backend/target
       - uses: actions/setup-java@v6
         if: env.SONAR_TOKEN != ''
         with:
           distribution: temurin
           java-version: 17
           cache: maven
-      - name: Analyse et Quality Gate
+      - name: Analyse et Quality Gate (sans relancer les tests)
         if: env.SONAR_TOKEN != ''
-        run: ./mvnw -B -ntp verify sonar:sonar -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.token="$SONAR_TOKEN" -Dsonar.qualitygate.wait=true
+        working-directory: backend
+        run: ./mvnw -B -ntp sonar:sonar -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.token="$SONAR_TOKEN" -Dsonar.qualitygate.wait=true
+
+  # Livrables : uniquement sur main, après les tests (et Sonar s'il est configuré)
+  build:
+    needs: [tests-unitaires, sonar]
+    if: >-
+      !cancelled() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+      && needs.tests-unitaires.result == 'success'
+      && (needs.sonar.result == 'success' || needs.sonar.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - name: Jar du backend
+        working-directory: backend
+        run: ./mvnw -B -ntp package -DskipTests
+      - name: Image Docker du backend
+        run: docker build -f backend/Dockerfile --build-arg GIT_COMMIT="${GITHUB_SHA::7}" -t "kfokam48/presence-backend:${GITHUB_SHA::7}" .
+      - uses: actions/upload-artifact@v7
+        with:
+          name: presence-backend-jar
+          path: backend/target/presence-*.jar
