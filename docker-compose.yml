@@ -26,6 +26,9 @@ services:
         REGISTRY: ${REGISTRY:-docker.io}
         MAVEN_MIRROR_URL: ${MAVEN_MIRROR_URL:-}
         GIT_COMMIT: ${GIT_COMMIT:-local}
+      # Permet au build Maven de joindre un Nexus local (MAVEN_MIRROR_URL, docs/INFRA.md) ; sans effet sinon
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
     image: kfokam48/presence-backend:0.1.0-SNAPSHOT
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-kfokam48}
