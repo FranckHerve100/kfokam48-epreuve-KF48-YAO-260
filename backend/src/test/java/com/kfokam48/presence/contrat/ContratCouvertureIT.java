@@ -35,7 +35,9 @@ class ContratCouvertureIT {
     static final List<String> OPERATIONS_LIVREES = List.of(
             "POST /api/sessions",
             "GET /api/promotions",
-            "GET /api/promotions/{id}/sessions");
+            "GET /api/promotions/{id}/sessions",
+            "POST /api/presences",
+            "GET /api/promotions/{id}/etudiants");
 
     @Autowired
     private MockMvc mvc;

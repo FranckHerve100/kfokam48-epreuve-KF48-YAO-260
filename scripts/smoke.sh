@@ -63,4 +63,9 @@ verifier "Sessions d'une promotion"   GET /api/promotions/1/sessions 200 '"code"
 verifier "Ouvrir une session (EF1)"   POST /api/sessions             201 '"expirationAt"' '{"titre":"Fumée","promotionId":1}'
 verifier "Promotion inconnue (EF1)"   POST /api/sessions             400 '"code":"PROMOTION_INCONNUE"' '{"titre":"Fumée","promotionId":999999}'
 
+# ── 03 Présences ────────────────────────────────────────────────────────────
+verifier "Étudiants d'une promotion"  GET /api/promotions/1/etudiants 200 '"nom":"Abena Mvondo"'
+verifier "Code expiré (RG1)"          POST /api/presences            410 '"code":"CODE_EXPIRE"' '{"code":"EXPR22","etudiantId":1}'
+verifier "Code inconnu (RG3)"         POST /api/presences            400 '"code":"CODE_INCONNU"' '{"code":"Z9Z9Z9","etudiantId":1}'
+
 echo "🎉 $TOTAL vérifications réussies"

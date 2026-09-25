@@ -203,7 +203,9 @@
                   "pm.test('liste { id, nom }', () => promotions.forEach(p => pm.expect(p).to.have.all.keys('id', 'nom')));",
                   "const yaounde = promotions.find(p => p.nom === 'KF48 Yaoundé');",
                   "pm.test('promotion de démonstration présente', () => pm.expect(yaounde).to.be.an('object'));",
-                  "pm.collectionVariables.set('promotionId', yaounde.id);"
+                  "pm.collectionVariables.set('promotionId', yaounde.id);",
+                  "const douala = promotions.find(p => p.nom === 'KF48 Douala');",
+                  "pm.collectionVariables.set('promotionDoualaId', douala.id);"
                 ]
               }
             }
@@ -257,6 +259,72 @@
           }
         },
         {
+          "name": "Étudiants de la promotion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "const etudiants = pm.response.json();",
+                  "pm.test('au moins deux étudiants { id, nom }', () => { pm.expect(etudiants.length).to.be.at.least(2); etudiants.forEach(e => pm.expect(e).to.have.all.keys('id', 'nom')); });",
+                  "pm.test('triés par nom', () => pm.expect(etudiants.map(e => e.nom)).to.eql([...etudiants.map(e => e.nom)].sort((a, b) => a.localeCompare(b))));",
+                  "pm.collectionVariables.set('etudiantId', etudiants[0].id);",
+                  "pm.collectionVariables.set('etudiant2Id', etudiants[1].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/promotions/{{promotionId}}/etudiants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "promotions",
+                "{{promotionId}}",
+                "etudiants"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Étudiants d'une autre promotion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('etudiantDoualaId', pm.response.json()[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/promotions/{{promotionDoualaId}}/etudiants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "promotions",
+                "{{promotionDoualaId}}",
+                "etudiants"
+              ]
+            }
+          }
+        },
+        {
           "name": "Sessions d'une promotion inconnue → 404 PROMOTION_INCONNUE",
           "event": [
             {
@@ -288,6 +356,39 @@
               ]
             }
           }
+        },
+        {
+          "name": "Étudiants d'une promotion inconnue → 404 PROMOTION_INCONNUE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 404', () => pm.response.to.have.status(404));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code PROMOTION_INCONNUE', () => pm.expect(corps.code).to.eql('PROMOTION_INCONNUE'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/promotions/999999/etudiants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "promotions",
+                "999999",
+                "etudiants"
+              ]
+            }
+          }
         }
       ]
     },
@@ -308,7 +409,8 @@
                   "pm.test('code de 6 caractères sans ambiguïté (H5)', () => pm.expect(session.code).to.match(/^[A-HJ-NP-Z2-9]{6}$/));",
                   "pm.test('expiration 15 min après l\\'ouverture (RG1)', () => pm.expect(new Date(session.expirationAt) - new Date(session.ouvertureAt)).to.eql(15 * 60 * 1000));",
                   "pm.collectionVariables.set('sessionId', session.id);",
-                  "pm.collectionVariables.set('sessionCode', session.code);"
+                  "pm.collectionVariables.set('sessionCode', session.code);",
+                  "pm.collectionVariables.set('sessionCodeMinuscule', session.code.toLowerCase());"
                 ]
               }
             }
@@ -424,6 +526,370 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titre\": \"Cours\",\n  \"promotionId\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03-Présences",
+      "item": [
+        {
+          "name": "Marquer sa présence → 201 (EF2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 201', () => pm.response.to.have.status(201));",
+                  "const presence = pm.response.json();",
+                  "pm.test('champs du contrat', () => pm.expect(presence).to.have.all.keys('id', 'sessionId', 'etudiantId', 'source'));",
+                  "pm.test('source ETUDIANT', () => pm.expect(presence.source).to.eql('ETUDIANT'));",
+                  "pm.test('session ouverte par le dossier 02', () => pm.expect(presence.sessionId).to.eql(pm.collectionVariables.get('sessionId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/presences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "presences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{sessionCode}}\",\n  \"etudiantId\": {{etudiantId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Déjà présent → 409 DEJA_PRESENT (RG2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 409', () => pm.response.to.have.status(409));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code DEJA_PRESENT', () => pm.expect(corps.code).to.eql('DEJA_PRESENT'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/presences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "presences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{sessionCode}}\",\n  \"etudiantId\": {{etudiantId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Code saisi en minuscules → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 201', () => pm.response.to.have.status(201));",
+                  "pm.test('source ETUDIANT', () => pm.expect(pm.response.json().source).to.eql('ETUDIANT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/presences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "presences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{sessionCodeMinuscule}}\",\n  \"etudiantId\": {{etudiant2Id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Code inconnu → 400 CODE_INCONNU (RG3)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400', () => pm.response.to.have.status(400));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code CODE_INCONNU', () => pm.expect(corps.code).to.eql('CODE_INCONNU'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/presences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "presences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"Z9Z9Z9\",\n  \"etudiantId\": {{etudiantId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Code expiré → 410 CODE_EXPIRE (RG1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 410', () => pm.response.to.have.status(410));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code CODE_EXPIRE', () => pm.expect(corps.code).to.eql('CODE_EXPIRE'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/presences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "presences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"EXPR22\",\n  \"etudiantId\": {{etudiantId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Autre promotion → 400 HORS_PROMOTION (RG18)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400', () => pm.response.to.have.status(400));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code HORS_PROMOTION', () => pm.expect(corps.code).to.eql('HORS_PROMOTION'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/presences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "presences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{sessionCode}}\",\n  \"etudiantId\": {{etudiantDoualaId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Étudiant inconnu → 400 ETUDIANT_INCONNU",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400', () => pm.response.to.have.status(400));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code ETUDIANT_INCONNU', () => pm.expect(corps.code).to.eql('ETUDIANT_INCONNU'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/presences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "presences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{sessionCode}}\",\n  \"etudiantId\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Code absent → 400 CHAMP_MANQUANT (RG17)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400', () => pm.response.to.have.status(400));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code CHAMP_MANQUANT', () => pm.expect(corps.code).to.eql('CHAMP_MANQUANT'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/presences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "presences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"etudiantId\": {{etudiantId}}\n}",
               "options": {
                 "raw": {
                   "language": "json"

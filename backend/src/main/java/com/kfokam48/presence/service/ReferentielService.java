@@ -9,6 +9,7 @@ import com.kfokam48.presence.domain.Session;
 import com.kfokam48.presence.dto.ReferenceDto;
 import com.kfokam48.presence.dto.SessionDto;
 import com.kfokam48.presence.exception.PromotionInconnueException;
+import com.kfokam48.presence.repository.EtudiantRepository;
 import com.kfokam48.presence.repository.PromotionRepository;
 import com.kfokam48.presence.repository.SessionRepository;
 
@@ -19,10 +20,12 @@ public class ReferentielService {
 
     private final PromotionRepository promotions;
     private final SessionRepository sessions;
+    private final EtudiantRepository etudiants;
 
-    public ReferentielService(PromotionRepository promotions, SessionRepository sessions) {
+    public ReferentielService(PromotionRepository promotions, SessionRepository sessions, EtudiantRepository etudiants) {
         this.promotions = promotions;
         this.sessions = sessions;
+        this.etudiants = etudiants;
     }
 
     public List<ReferenceDto> promotions() {
@@ -36,6 +39,14 @@ public class ReferentielService {
         verifierPromotion(promotionId);
         return sessions.findByPromotionIdOrderByOuvertureAtDesc(promotionId).stream()
                 .map(ReferentielService::versDto)
+                .toList();
+    }
+
+    /** Étudiants d'une promotion triés par nom : l'étudiant se choisit dans cette liste (Q1, H7). */
+    public List<ReferenceDto> etudiantsDeLaPromotion(Long promotionId) {
+        verifierPromotion(promotionId);
+        return etudiants.findByPromotionIdOrderByNomAsc(promotionId).stream()
+                .map(etudiant -> new ReferenceDto(etudiant.getId(), etudiant.getNom()))
                 .toList();
     }
 

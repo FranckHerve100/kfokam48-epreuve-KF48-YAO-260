@@ -11,10 +11,12 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
+import com.kfokam48.presence.domain.Etudiant;
 import com.kfokam48.presence.domain.Promotion;
 import com.kfokam48.presence.domain.Session;
 import com.kfokam48.presence.dto.SessionDto;
 import com.kfokam48.presence.exception.PromotionInconnueException;
+import com.kfokam48.presence.repository.EtudiantRepository;
 import com.kfokam48.presence.repository.PromotionRepository;
 import com.kfokam48.presence.repository.SessionRepository;
 
@@ -22,7 +24,8 @@ class ReferentielServiceTest {
 
     private final PromotionRepository promotions = mock(PromotionRepository.class);
     private final SessionRepository sessions = mock(SessionRepository.class);
-    private final ReferentielService service = new ReferentielService(promotions, sessions);
+    private final EtudiantRepository etudiants = mock(EtudiantRepository.class);
+    private final ReferentielService service = new ReferentielService(promotions, sessions, etudiants);
 
     @Test
     void promotions_sontListeesParNom() {
@@ -53,6 +56,25 @@ class ReferentielServiceTest {
         when(promotions.existsById(99L)).thenReturn(false);
 
         assertThatThrownBy(() -> service.sessionsDeLaPromotion(99L))
+                .isInstanceOfSatisfying(PromotionInconnueException.class,
+                        e -> assertThat(e.getStatut()).isEqualTo(HttpStatus.NOT_FOUND));
+    }
+
+    @Test
+    void Q1_etudiantsDUnePromotion_sontListesParNom() {
+        Promotion promotion = new Promotion("KF48 Yaoundé");
+        when(promotions.existsById(1L)).thenReturn(true);
+        when(etudiants.findByPromotionIdOrderByNomAsc(1L))
+                .thenReturn(List.of(new Etudiant("Abena Mvondo", promotion), new Etudiant("Boris Ngono", promotion)));
+
+        assertThat(service.etudiantsDeLaPromotion(1L)).extracting("nom").containsExactly("Abena Mvondo", "Boris Ngono");
+    }
+
+    @Test
+    void Q1_etudiantsDUnePromotionInconnue_renvoie404PromotionInconnue() {
+        when(promotions.existsById(99L)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.etudiantsDeLaPromotion(99L))
                 .isInstanceOfSatisfying(PromotionInconnueException.class,
                         e -> assertThat(e.getStatut()).isEqualTo(HttpStatus.NOT_FOUND));
     }
