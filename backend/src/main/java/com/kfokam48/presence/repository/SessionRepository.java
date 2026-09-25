@@ -2,6 +2,7 @@ package com.kfokam48.presence.repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,4 +14,7 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     boolean existsByCodeAndExpirationAtGreaterThanEqual(String code, Instant instant);
 
     List<Session> findByPromotionIdOrderByOuvertureAtDesc(Long promotionId);
+
+    /** Seule la session la plus récente portant un code peut être en cours (H5). */
+    Optional<Session> findFirstByCodeOrderByOuvertureAtDesc(String code);
 }

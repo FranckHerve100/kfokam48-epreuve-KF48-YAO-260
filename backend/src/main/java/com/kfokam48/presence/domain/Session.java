@@ -64,6 +64,16 @@ public class Session {
         return clotureAt != null;
     }
 
+    /** Clôture explicite par le formateur (H2) : fige les dépôts et arrête le pointage. */
+    public void cloturer(Instant instant) {
+        this.clotureAt = instant;
+    }
+
+    /** Le pointage étudiant est refusé après expiration du code ou après clôture (RG1, H2). */
+    public boolean refusePointageA(Instant instant) {
+        return codeExpireA(instant) || estCloturee();
+    }
+
     public Long getId() {
         return id;
     }
