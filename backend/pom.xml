@@ -110,6 +110,19 @@
                     </includeOnlyProperties>
                 </configuration>
             </plugin>
+            <!-- Tests d'intégration *IT : lancés par failsafe pendant verify -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- Le contrat d'API est servi tel quel sur /contrat.yaml (définition « Contrat imposé » de Swagger UI) -->
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
