@@ -20,6 +20,9 @@ spring:
     time-zone: UTC
     serialization:
       write-dates-as-timestamps: false
+    deserialization:
+      # 12.5 n'est pas converti en 12 : une note décimale est refusée (RG11)
+      accept-float-as-int: false
 
 server:
   port: ${SERVER_PORT:8080}
