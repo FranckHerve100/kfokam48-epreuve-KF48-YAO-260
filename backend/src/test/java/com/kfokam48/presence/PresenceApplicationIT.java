@@ -12,7 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
- * Le contexte démarre sur H2 : Flyway applique V1 puis Hibernate valide le mapping
+ * Le contexte démarre sur H2 : Flyway applique V1 et V2 puis Hibernate valide le mapping
  * (ddl-auto=validate). Toute divergence entre entités et schéma fait échouer ce test (B5).
  */
 @SpringBootTest
@@ -25,9 +25,11 @@ class PresenceApplicationIT {
     @Autowired
     private JdbcTemplate jdbc;
 
+    /** Version courante du schéma : V2 depuis le passage à deux relecteurs (#52). */
     @Test
-    void B5_contexteDemarre_schemaV1AppliqueEtValide() {
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("1");
+    void B5_contexteDemarre_schemaV2AppliqueEtValide() {
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
+        assertThat(flyway.info().applied()).hasSize(2);
     }
 
     @Test
