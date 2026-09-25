@@ -10,9 +10,10 @@ import { formatDateHeure } from '../utils/format'
 type Retour = { genre: 'succes' | 'erreur'; texte: string } | null
 
 const libelleStatut: Record<StatutExercice, string> = {
-  DEPOSE: 'déposé — un relecteur sera tiré dès qu’un autre étudiant sera présent',
-  EN_ATTENTE_RELECTURE: 'en attente de relecture — un pair a été tiré au sort',
-  RELU: 'relu',
+  DEPOSE: 'déposé — deux relecteurs seront tirés dès que d’autres étudiants seront présents',
+  EN_ATTENTE_RELECTURE: 'en attente de relecture — des pairs ont été tirés au sort',
+  PARTIELLEMENT_RELU: 'relu par un pair sur deux — note provisoire',
+  RELU: 'relu par deux pairs',
 }
 
 /** Écran étudiant : se choisir dans la liste (Q1), marquer sa présence (EF2), déposer son exercice (EF3). */

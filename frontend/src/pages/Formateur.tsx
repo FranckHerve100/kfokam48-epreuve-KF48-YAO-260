@@ -117,7 +117,10 @@ function Tableau({ promotionId, actualisation }: { promotionId: number; actualis
   const { donnees, chargement, erreur, recharger } = useChargement(() => api.tableau(promotionId), [promotionId, actualisation])
   return (
     <div className="pleine-largeur">
-      <Carte titre="Tableau de la promotion" sousTitre="Moyenne des notes reçues calculée par l'API, sur 20.">
+      <Carte
+        titre="Tableau de la promotion"
+        sousTitre="Moyenne des notes retenues, calculée par l'API, sur 20. Chaque exercice est noté par deux pairs ; une note encore seule est provisoire."
+      >
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
           <button type="button" className="secondaire" onClick={recharger} disabled={chargement}>
             Actualiser
@@ -144,7 +147,14 @@ function Tableau({ promotionId, actualisation }: { promotionId: number; actualis
                     <td>{ligne.nom}</td>
                     <td className="nombre">{ligne.presences}</td>
                     <td className="nombre">{ligne.exercicesDeposes}</td>
-                    <td className="nombre">{formatMoyenne(ligne.moyenne)}</td>
+                    <td className="nombre">
+                      {formatMoyenne(ligne.moyenne)}
+                      {ligne.moyenneProvisoire && (
+                        <span className="pastille pastille-attente provisoire" title="Une note ne repose encore que sur une relecture sur deux">
+                          provisoire
+                        </span>
+                      )}
+                    </td>
                     <td className="nombre">
                       {ligne.relecturesEnAttente > 0 ? (
                         <span className="pastille pastille-attente">{ligne.relecturesEnAttente} en attente</span>
