@@ -5,7 +5,5 @@ dist/
 .env
 .idea/
 .vscode/
-claude/
-.claude/
 newman/
 *.iml
