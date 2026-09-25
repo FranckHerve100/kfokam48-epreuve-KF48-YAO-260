@@ -54,7 +54,7 @@ Première analyse (ticket #24) : Quality Gate **PASSED**, couverture 87,7 % (lig
 
 ### En CI
 
-Le job `sonar` de `ci.yml` s'exécute seulement si la **variable** de dépôt `SONAR_HOST_URL` et le **secret** `SONAR_TOKEN` sont définis (SonarQube Cloud, gratuit pour un dépôt public, ou un serveur joignable depuis GitHub). Sinon il est ignoré, jamais en échec, et il ne fait pas partie des checks requis de `main`.
+Le job `sonar` de `ci.yml` (après `tests-unitaires`, sans relancer les tests : il analyse les classes et le rapport JaCoCo du job précédent, donc la couverture des tests unitaires) s'exécute seulement si la **variable** de dépôt `SONAR_HOST_URL` et le **secret** `SONAR_TOKEN` sont définis (SonarQube Cloud, gratuit pour un dépôt public, ou un serveur joignable depuis GitHub). Sinon il est ignoré, jamais en échec, et il ne fait pas partie des checks requis de `main`.
 
 ### Arrêter
 

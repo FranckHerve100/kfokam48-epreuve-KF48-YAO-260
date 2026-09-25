@@ -208,19 +208,19 @@ flowchart LR
         C2["infra/docker-compose.infra.yml<br/>SonarQube + Nexus (optionnel)"]
     end
     subgraph CI["GitHub Actions"]
-        T["runner : tests H2,<br/>compose-smoke"]
-        GHCR["ghcr.io (release)"]
+        T["runner : prebuild, tests unitaires,<br/>sonar"]
+        B["build jar + image<br/>(main uniquement)"]
     end
     C1 -. "push image optionnel" .-> C2
-    T -- "tag v*" --> GHCR
+    T --> B
 ```
 
 | Environnement | Où | Base | Déclenchement |
 |---|---|---|---|
 | `dev` | Poste local, `docker compose up` | PostgreSQL + données de démo | Manuel |
-| `test` | Runner CI et `./mvnw test` | H2 mode PostgreSQL, migrations réelles | Chaque commit et PR |
-| `smoke` | Runner CI, job `compose-smoke` | PostgreSQL conteneurisé + démo | Chaque PR |
-| `release` | Images `ghcr.io` (et Nexus local si actif) | — | Tag `v*` |
+| `test` | Runner CI (`./mvnw test`) et poste local (`./mvnw verify`, avec les tests d'intégration) | H2 mode PostgreSQL, migrations réelles | Chaque PR et chaque commit |
+| `smoke` | Poste local : `docker compose` + `smoke.sh` + Newman (porte de vérification) | PostgreSQL conteneurisé + démo | Chaque ticket, avant fusion |
+| `build` | Runner CI, job `build` : jar + image Docker (Nexus local pour publier, docs/INFRA.md) | — | Push sur `main` uniquement |
 
 **Démarrage pour le correcteur :**
 
@@ -232,30 +232,34 @@ docker compose up --build
 
 API et Swagger UI : http://localhost:8080/swagger-ui.html · Frontend (ticket #3) : http://localhost:5173
 
-Vérification : `bash scripts/smoke.sh` puis la collection `postman/` avec Newman ; les deux tournent aussi dans le job CI `compose-smoke`.
+Vérification : `bash scripts/smoke.sh` puis la collection `postman/` avec Newman (porte de vérification locale de chaque ticket).
 
 ## 9. Chaîne CI/CD
 
 ```mermaid
 flowchart LR
-    PR["Pull request / push main"] --> CH{"changes<br/>paths-filter"}
-    CH -- "api/**" --> CL["contract-lint<br/>Redocly"]
-    CH -- "backend/**" --> BK["backend<br/>mvnw verify + JaCoCo"]
-    CH -- "frontend/**" --> FR["frontend<br/>lint, test, build"]
-    BK --> SM["compose-smoke<br/>up --wait + smoke.sh"]
-    FR --> SM
-    PR --> SEC["security<br/>CodeQL, Gitleaks,<br/>dependency review"]
-    BK -. "si SONAR_TOKEN" .-> SQ["sonar<br/>Quality Gate"]
-    SM --> MERGE["merge commit<br/>sur main"]
-    SEC --> MERGE
+    PR["PR vers main"] --> PB["prebuild<br/>lint Redocly + compile"]
+    MAIN["push sur main<br/>(fusion d'une PR)"] --> PB
+    PB --> TU["tests-unitaires<br/>mvnw test + JaCoCo ≥ 70 %"]
+    TU --> SQ["sonar<br/>Quality Gate<br/>(si configuré)"]
+    SQ --> BD["build<br/>jar + image Docker"]
+    BD -. "main uniquement" .- MAIN
+    PR --> SEC["security.yml (séparé)<br/>CodeQL, Gitleaks, dependency review"]
 ```
 
-| Workflow | Déclencheur | Requis pour fusionner |
+Un seul pipeline, `ci.yml`, en quatre étapes enchaînées : une PR s'arrête après `sonar`, et seule la branche critique `main` produit les livrables (`build`). Les tests d'intégration (`*IT`), la fumée `docker compose` et Newman ne sont pas dans la CI : ils font partie de la porte de vérification locale de chaque ticket (CONTRIBUTING.md).
+
+| Job (`ci.yml`) | Déclencheur | Contenu | Requis pour fusionner |
+|---|---|---|---|
+| `prebuild` | PR vers `main`, push `main` | Lint Redocly du contrat, `./mvnw compile` | Oui |
+| `tests-unitaires` | après `prebuild` | `./mvnw test`, rapport JaCoCo, seuil 70 % sur `service` | Oui |
+| `sonar` | après `tests-unitaires`, seulement si `SONAR_HOST_URL` et `SONAR_TOKEN` sont définis | Analyse des classes et de la couverture du job précédent, Quality Gate | Non (optionnel) |
+| `build` | push sur `main` uniquement, après les tests (et Sonar s'il a tourné) | Jar, image Docker `kfokam48/presence-backend:<commit>` | — |
+
+| Autre workflow | Déclencheur | Requis pour fusionner |
 |---|---|---|
-| `ci.yml` : `contract-lint`, `backend`, `frontend`, `compose-smoke` | PR vers `main`, push `main` | `backend`, `frontend` |
-| `ci.yml` : `sonar` | Idem, seulement si `SONAR_TOKEN` et `SONAR_HOST_URL` sont définis | Non |
 | `security.yml` | PR, push `main`, hebdomadaire | Recommandé |
-| Dependabot | Mensuel (Maven, Docker, GitHub Actions) | — |
+| Dependabot | Mensuel (Maven, Docker, GitHub Actions), versions majeures Maven et Docker exclues | — |
 
 **Protection de `main` (ruleset)** : PR obligatoire, checks requis, force push et suppression bloqués, merge commit uniquement. Seuls les commits `[JALON]` contournent la règle (bypass administrateur).
 
@@ -326,3 +330,4 @@ kfokam48-epreuve-KF48-YAO-260/
 | 1 | 25/09/2026, étape 1 | Version initiale |
 | 2 | 25/09/2026, étape 2 (#1) | Spring Boot 3.5.16 : start.spring.io ne propose plus la branche 3.5, le `pom.xml` est écrit à la main (ADR-2 inchangé). Ajout de Swagger UI à deux définitions, des endpoints Actuator `info`, `metrics`, `prometheus` et des tests Postman/Newman |
 | 3 | 25/09/2026, étape 2 (#11) | Conteneur backend construit depuis la racine du dépôt, port PostgreSQL non publié, sonde de santé sur la readiness, smoke et Newman dans `compose-smoke` |
+| 4 | 25/09/2026, étape 2 (#36) | CI réduite à prebuild → tests unitaires → sonar → build ; build sur `main` uniquement ; intégration, smoke et Newman en porte locale |
