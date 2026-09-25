@@ -45,7 +45,7 @@ else
 fi
 
 # 3. Token d'analyse (seulement si SONAR_TOKEN est absent ou invalide) : affiché une seule fois
-if [[ -n "${SONAR_TOKEN:-}" ]] && curl -s -u "$SONAR_TOKEN:" "$HOTE/api/authentication/validate" | grep -q '"valid":true'; then
+if [[ -n "${SONAR_TOKEN:-}" ]] && curl -s -u "$SONAR_TOKEN:" "$HOTE/api/authentication/validate" | grep -q '"valid":true'; then  # gitleaks:allow (variable lue dans .env, pas un secret)
   echo "✅ SONAR_TOKEN valide, aucun nouveau token"
 else
   NOM="analyse-$(date +%Y%m%d-%H%M%S)"
