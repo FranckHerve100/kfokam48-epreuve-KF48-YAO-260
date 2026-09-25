@@ -2,6 +2,8 @@ package com.kfokam48.presence.domain;
 
 import java.time.Instant;
 
+import org.springframework.data.domain.AbstractAggregateRoot;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,7 +18,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "presence")
-public class Presence {
+public class Presence extends AbstractAggregateRoot<Presence> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,6 +47,7 @@ public class Presence {
         this.etudiant = etudiant;
         this.source = source;
         this.marqueeAt = marqueeAt;
+        registerEvent(new PresenceEnregistree(this));
     }
 
     public Long getId() {

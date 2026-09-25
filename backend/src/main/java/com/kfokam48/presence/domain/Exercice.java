@@ -2,6 +2,8 @@ package com.kfokam48.presence.domain;
 
 import java.time.Instant;
 
+import org.springframework.data.domain.AbstractAggregateRoot;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,7 +18,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "exercice")
-public class Exercice {
+public class Exercice extends AbstractAggregateRoot<Exercice> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,6 +52,7 @@ public class Exercice {
         this.lien = lien;
         this.deposeAt = deposeAt;
         this.statut = StatutExercice.DEPOSE;
+        registerEvent(new ExerciceDepose(this));
     }
 
     public void passerEnAttenteDeRelecture() {
