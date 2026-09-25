@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kfokam48.presence.domain.Etudiant;
@@ -29,7 +30,8 @@ import com.kfokam48.presence.repository.RelectureRepository;
  * Tirage du relecteur (EF4) : un seul par exercice (RG9), parmi les étudiants présents à la session
  * sauf l'auteur ; le moins chargé en relectures de la session d'abord, puis au hasard entre ex æquo (RG10).
  * Sans candidat, l'exercice reste DEPOSE et le tirage est relancé à chaque nouvelle présence (H1).
- * Déclenché par les événements de domaine publiés au save, dans la transaction de l'appelant.
+ * Déclenché par les événements de domaine publiés au save : dans la transaction du dépôt pour un exercice,
+ * après validation et dans une transaction à part pour une présence (#50).
  */
 @Service
 public class AssignationService {
@@ -55,8 +57,12 @@ public class AssignationService {
         assigner(evenement.exercice());
     }
 
-    @EventListener
-    @Transactional
+    /**
+     * Relance déclenchée par une nouvelle présence (H1), dans une transaction à part : appelée par
+     * {@link RelanceTirageApresPresence} une fois la présence validée, pour qu'un conflit de tirage ne puisse
+     * jamais annuler une présence (#50).
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void presenceEnregistree(PresenceEnregistree evenement) {
         relancerTirage(evenement.presence().getSession());
     }
