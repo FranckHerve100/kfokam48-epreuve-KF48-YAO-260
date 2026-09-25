@@ -72,7 +72,9 @@ a { color: var(--primaire); }
 .tuile .fleche { position: absolute; top: 1.3rem; right: 1.3rem; color: var(--primaire); font-weight: 700; }
 
 /* Cartes et grilles d'écran */
-.grille { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; }
+.grille { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); align-items: start; }
+/* Une colonne ne s'élargit jamais pour son contenu : un tableau large défile dans sa carte */
+.grille > * { min-width: 0; }
 .carte { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--rayon); box-shadow: var(--ombre); padding: 1.25rem; }
 .carte-entete { margin-bottom: 1rem; }
 .carte-entete p { margin: 0.25rem 0 0; color: var(--texte-doux); font-size: 0.92rem; }
@@ -112,7 +114,8 @@ button.secondaire { background: var(--surface-douce); color: var(--texte); borde
   text-align: center; padding: 1.25rem; border-radius: var(--rayon);
   background: linear-gradient(135deg, var(--primaire-clair), #f4f7ff); border: 1px dashed #b9cdf7;
 }
-.code-projete .code { font-size: clamp(2.4rem, 9vw, 4rem); font-weight: 800; letter-spacing: 0.18em; color: var(--primaire-fonce); font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; }
+.code-projete { container-type: inline-size; }
+.code-projete .code { font-size: clamp(1.8rem, 16cqi, 3.6rem); font-weight: 800; letter-spacing: 0.12em; white-space: nowrap; color: var(--primaire-fonce); font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; }
 .code-projete p { margin: 0.25rem 0 0; color: var(--texte-doux); }
 
 /* Tableaux */
@@ -140,6 +143,6 @@ tbody tr:hover { background: #fafbfe; }
   .barre { padding: 0.6rem 0.9rem; }
   .barre nav { width: 100%; justify-content: space-between; }
   .contenu { padding: 1.25rem 0.9rem 2rem; }
-  .grille { grid-template-columns: 1fr; }
+  .grille { grid-template-columns: minmax(0, 1fr); }
   h1 { font-size: 1.35rem; }
 }
