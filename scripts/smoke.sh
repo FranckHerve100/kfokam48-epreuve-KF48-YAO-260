@@ -55,4 +55,12 @@ verifier "Implémentation (springdoc)" GET /v3/api-docs               200 '"open
 verifier "Swagger UI"                 GET /swagger-ui.html           200 'swagger-ui'
 verifier "Erreur au format du contrat" GET /api/inexistant           404 '"code":"RESSOURCE_INCONNUE"'
 
+# ── 01 Référentiel ──────────────────────────────────────────────────────────
+verifier "Promotions"                 GET /api/promotions            200 '"nom":"KF48 Yaoundé"'
+verifier "Sessions d'une promotion"   GET /api/promotions/1/sessions 200 '"code":"EXPR22"'
+
+# ── 02 Sessions ─────────────────────────────────────────────────────────────
+verifier "Ouvrir une session (EF1)"   POST /api/sessions             201 '"expirationAt"' '{"titre":"Fumée","promotionId":1}'
+verifier "Promotion inconnue (EF1)"   POST /api/sessions             400 '"code":"PROMOTION_INCONNUE"' '{"titre":"Fumée","promotionId":999999}'
+
 echo "🎉 $TOTAL vérifications réussies"
