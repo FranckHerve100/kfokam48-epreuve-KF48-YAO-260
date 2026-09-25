@@ -1,0 +1,9 @@
+target/
+nodes_modules/
+dist/
+*.log
+.env
+.idea/
+.vscode/
+claude/
+.claude/
