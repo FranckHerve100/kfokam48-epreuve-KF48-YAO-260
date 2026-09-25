@@ -1,5 +1,6 @@
 package com.kfokam48.presence.repository;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,5 +12,5 @@ public interface ExerciceRepository extends JpaRepository<Exercice, Long> {
 
     boolean existsBySessionIdAndEtudiantId(Long sessionId, Long etudiantId);
 
-    List<Exercice> findBySessionIdAndStatutOrderByDeposeAtAsc(Long sessionId, StatutExercice statut);
+    List<Exercice> findBySessionIdAndStatutInOrderByDeposeAtAsc(Long sessionId, Collection<StatutExercice> statuts);
 }
