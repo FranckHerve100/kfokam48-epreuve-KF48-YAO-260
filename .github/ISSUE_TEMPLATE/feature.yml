@@ -1,0 +1,36 @@
+name: "Feature / User story"
+description: "Un résultat visible par l'utilisateur"
+title: "[EFx] <résultat attendu>"
+labels: ["type:feature"]
+body:
+  - type: input
+    id: story
+    attributes:
+      label: "User story"
+      placeholder: "En tant que <acteur>, je veux <action> afin de <bénéfice>"
+    validations: { required: true }
+  - type: textarea
+    id: criteres
+    attributes:
+      label: "Critères d'acceptation (Given / When / Then)"
+      value: |
+        - [ ] Given ... When ... Then ...
+        - [ ] Given ... When ... Then ... (cas d'erreur, code HTTP)
+    validations: { required: true }
+  - type: dropdown
+    id: priorite
+    attributes:
+      label: "Priorité"
+      options: ["Must", "Should", "Could"]
+    validations: { required: true }
+  - type: input
+    id: refs
+    attributes:
+      label: "Exigences et règles couvertes"
+      placeholder: "EF2 · RG1, RG2, RG3"
+    validations: { required: true }
+  - type: textarea
+    id: impacts
+    attributes:
+      label: "Impacts"
+      value: "- Contrat API : \n- Migration : \n- Écran : "

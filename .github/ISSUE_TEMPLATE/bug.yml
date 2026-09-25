@@ -1,0 +1,24 @@
+name: "Bug"
+description: "Un écart entre le comportement et une règle RGx"
+title: "[BUG] <symptôme>"
+labels: ["type:bug"]
+body:
+  - type: input
+    id: regle
+    attributes: { label: "Règle ou exigence violée", placeholder: "RG1" }
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: "Reproduction"
+      value: |
+        1. Requête : 
+        2. Réponse obtenue : 
+        3. Réponse attendue (contrat) : 
+    validations: { required: true }
+  - type: input
+    id: test
+    attributes: { label: "Test qui reproduit le bug (écrit avant le correctif)" }
+  - type: dropdown
+    id: gravite
+    attributes: { label: "Gravité", options: ["Bloquant", "Majeur", "Mineur"] }
