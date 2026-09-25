@@ -57,8 +57,8 @@ flowchart LR
 | Conteneur | Image | Rôle | Santé |
 |---|---|---|---|
 | `frontend` | `nginx:alpine` + `dist/` React | Sert les 3 écrans ; reverse proxy `/api` vers `backend` (pas de CORS) | `wget /` |
-| `backend` | `eclipse-temurin:17-jre`, utilisateur non root | API REST, règles métier, migrations Flyway au démarrage | `/actuator/health` |
-| `postgres` | `postgres:16` | Données ; volume nommé `pgdata` | `pg_isready` |
+| `backend` | `eclipse-temurin:17-jre`, utilisateur non root ; image `kfokam48/presence-backend` construite depuis la racine (`backend/Dockerfile`) | API REST, règles métier, migrations Flyway et données de démo au démarrage | `/actuator/health/readiness` (sonde sans curl) |
+| `postgres` | `postgres:16` | Données ; volume nommé `pgdata` ; port non publié (joint par le réseau interne de compose) | `pg_isready` |
 | `sonarqube` *(optionnel)* | `sonarqube:community` + base dédiée | Qualité, couverture JaCoCo, Quality Gate | `/api/system/status` |
 | `nexus` *(optionnel)* | `sonatype/nexus3` | Cache Maven Central, proxy Docker Hub, registre d'images privé | `/service/rest/v1/status` |
 
@@ -230,7 +230,9 @@ cd kfokam48-epreuve-KF48-YAO-260
 docker compose up --build
 ```
 
-Frontend : http://localhost:5173 · API : http://localhost:8080
+API et Swagger UI : http://localhost:8080/swagger-ui.html · Frontend (ticket #3) : http://localhost:5173
+
+Vérification : `bash scripts/smoke.sh` puis la collection `postman/` avec Newman ; les deux tournent aussi dans le job CI `compose-smoke`.
 
 ## 9. Chaîne CI/CD
 
@@ -323,3 +325,4 @@ kfokam48-epreuve-KF48-YAO-260/
 |---|---|---|
 | 1 | 25/09/2026, étape 1 | Version initiale |
 | 2 | 25/09/2026, étape 2 (#1) | Spring Boot 3.5.16 : start.spring.io ne propose plus la branche 3.5, le `pom.xml` est écrit à la main (ADR-2 inchangé). Ajout de Swagger UI à deux définitions, des endpoints Actuator `info`, `metrics`, `prometheus` et des tests Postman/Newman |
+| 3 | 25/09/2026, étape 2 (#11) | Conteneur backend construit depuis la racine du dépôt, port PostgreSQL non publié, sonde de santé sur la readiness, smoke et Newman dans `compose-smoke` |

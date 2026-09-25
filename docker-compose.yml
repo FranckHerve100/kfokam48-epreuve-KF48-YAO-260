@@ -1,0 +1,42 @@
+# Application complète : docker compose up --build
+# Aucune dépendance vers l'outillage optionnel (SonarQube, Nexus : infra/docker-compose.infra.yml).
+name: kfokam48
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${DB_NAME:-kfokam48}
+      POSTGRES_USER: ${DB_USER:-kfokam48}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-kfokam48}
+    # Port non publié : le backend joint la base par le réseau interne (évite un conflit avec un PostgreSQL local)
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        REGISTRY: ${REGISTRY:-docker.io}
+        MAVEN_MIRROR_URL: ${MAVEN_MIRROR_URL:-}
+        GIT_COMMIT: ${GIT_COMMIT:-local}
+    image: kfokam48/presence-backend:0.1.0-SNAPSHOT
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-kfokam48}
+      DB_USER: ${DB_USER:-kfokam48}
+      DB_PASSWORD: ${DB_PASSWORD:-kfokam48}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

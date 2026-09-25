@@ -22,6 +22,7 @@ jobs:
       api: ${{ steps.filtre.outputs.api }}
       backend: ${{ steps.filtre.outputs.backend }}
       frontend: ${{ steps.filtre.outputs.frontend }}
+      docker: ${{ steps.filtre.outputs.docker }}
       frontend-existe: ${{ steps.existe.outputs.frontend }}
     steps:
       - uses: actions/checkout@v7
@@ -40,6 +41,13 @@ jobs:
             frontend:
               - 'frontend/**'
               - 'api/**'
+              - '.github/workflows/ci.yml'
+            docker:
+              - 'docker-compose.yml'
+              - '**/Dockerfile'
+              - '.dockerignore'
+              - 'scripts/**'
+              - 'postman/**'
               - '.github/workflows/ci.yml'
       - id: existe
         run: echo "frontend=$([ -f frontend/package.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
@@ -100,3 +108,40 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run build
+
+  # Application conteneurisée de bout en bout : docker compose + tests de fumée + collection Newman
+  compose-smoke:
+    needs: [changes, backend]
+    if: >-
+      !cancelled() && needs.changes.result == 'success' && needs.backend.result != 'failure'
+      && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.docker == 'true')
+    runs-on: ubuntu-latest
+    env:
+      GIT_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Démarrer l'application (PostgreSQL + backend + données de démo)
+        run: docker compose up -d --build --wait
+      - name: Tests de fumée
+        run: bash scripts/smoke.sh
+      - name: Collection Postman (Newman)
+        run: >-
+          npx --yes newman@6.2.2 run postman/KFOKAM48.postman_collection.json
+          -e postman/local.postman_environment.json
+          --reporters cli,junit --reporter-junit-export newman/junit.xml
+      - name: Journaux des conteneurs
+        if: failure()
+        run: docker compose logs
+      - name: Rapport Newman
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rapport-newman
+          path: newman/
+          if-no-files-found: ignore
+      - name: Arrêter et nettoyer
+        if: always()
+        run: docker compose down -v
