@@ -5,9 +5,12 @@ import java.time.Instant;
 import org.springframework.boot.test.context.TestComponent;
 
 import com.kfokam48.presence.domain.Etudiant;
+import com.kfokam48.presence.domain.Presence;
 import com.kfokam48.presence.domain.Promotion;
 import com.kfokam48.presence.domain.Session;
+import com.kfokam48.presence.domain.SourcePresence;
 import com.kfokam48.presence.repository.EtudiantRepository;
+import com.kfokam48.presence.repository.PresenceRepository;
 import com.kfokam48.presence.repository.PromotionRepository;
 import com.kfokam48.presence.repository.SessionRepository;
 
@@ -20,11 +23,14 @@ public class JeuDEssai {
     private final PromotionRepository promotions;
     private final EtudiantRepository etudiants;
     private final SessionRepository sessions;
+    private final PresenceRepository presences;
 
-    public JeuDEssai(PromotionRepository promotions, EtudiantRepository etudiants, SessionRepository sessions) {
+    public JeuDEssai(PromotionRepository promotions, EtudiantRepository etudiants, SessionRepository sessions,
+                     PresenceRepository presences) {
         this.promotions = promotions;
         this.etudiants = etudiants;
         this.sessions = sessions;
+        this.presences = presences;
     }
 
     public Promotion promotion() {
@@ -37,5 +43,14 @@ public class JeuDEssai {
 
     public Session session(Promotion promotion, String code, Instant ouverture) {
         return sessions.save(new Session("Session " + (++compteur), promotion, code, ouverture));
+    }
+
+    /** Session ouverte il y a {@code minutes} minutes (horloge réelle). */
+    public Session sessionOuverteIlYA(Promotion promotion, String code, long minutes) {
+        return session(promotion, code, Instant.now().minusSeconds(minutes * 60));
+    }
+
+    public Presence presence(Session session, Etudiant etudiant) {
+        return presences.save(new Presence(session, etudiant, SourcePresence.ETUDIANT, Instant.now()));
     }
 }
