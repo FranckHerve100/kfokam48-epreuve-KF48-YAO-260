@@ -1,6 +1,6 @@
 # Outillage OPTIONNEL, indépendant de l'application (docker-compose.yml) — voir docs/INFRA.md.
 #   docker compose -f infra/docker-compose.infra.yml --env-file .env up -d
-# SonarQube exige vm.max_map_count >= 524288 sous Linux et environ 3 Go de RAM.
+# SonarQube exige vm.max_map_count >= 524288 sous Linux et environ 3 Go de RAM ; Nexus environ 2,5 Go.
 name: kfokam48-infra
 
 services:
@@ -35,7 +35,25 @@ services:
       - sonar-logs:/opt/sonarqube/logs
     # Pas de healthcheck : l'image n'embarque ni curl ni wget. infra/sonar/init.sh attend /api/system/status = UP.
 
+  nexus:
+    image: sonatype/nexus3
+    ports:
+      - "${NEXUS_PORT:-8081}:8081"   # interface web, dépôts Maven (maven-public)
+      - "8082:8082"                  # docker-proxy : cache de Docker Hub
+      - "8083:8083"                  # docker-hosted : registre privé des images du projet
+    environment:
+      INSTALL4J_ADD_VM_PARAMS: "-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g"
+    volumes:
+      - nexus-data:/nexus-data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8081/service/rest/v1/status/writable || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s
+
 volumes:
+  nexus-data:
   sonar-db:
   sonar-data:
   sonar-extensions:
