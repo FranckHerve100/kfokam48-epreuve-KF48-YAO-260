@@ -324,5 +324,5 @@ kfokam48-epreuve-KF48-YAO-260/
 | Version | Quand | Ce qui a changé et pourquoi |
 |---|---|---|
 | 1 | 25/09/2026, étape 1 | Version initiale |
-| 3 | 25/09/2026, étape 2 (#11) | Conteneur backend construit depuis la racine du dépôt, port PostgreSQL non publié, sonde de santé sur la readiness, smoke et Newman dans `compose-smoke` |
 | 2 | 25/09/2026, étape 2 (#1) | Spring Boot 3.5.16 : start.spring.io ne propose plus la branche 3.5, le `pom.xml` est écrit à la main (ADR-2 inchangé). Ajout de Swagger UI à deux définitions, des endpoints Actuator `info`, `metrics`, `prometheus` et des tests Postman/Newman |
+| 3 | 25/09/2026, étape 2 (#11) | Conteneur backend construit depuis la racine du dépôt, port PostgreSQL non publié, sonde de santé sur la readiness, smoke et Newman dans `compose-smoke` |
