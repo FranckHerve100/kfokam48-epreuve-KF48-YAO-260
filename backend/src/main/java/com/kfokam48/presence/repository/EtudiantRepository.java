@@ -13,20 +13,51 @@ public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
     List<Etudiant> findByPromotionIdOrderByNomAsc(Long promotionId);
 
     /**
-     * Tableau du formateur en UNE requête (ENF2) : par étudiant de la promotion, ses présences, ses exercices
-     * déposés, la moyenne des notes reçues (RG15, null sans note) et les relectures qu'il doit encore (RG14).
+     * Tableau du formateur en UNE requête (ENF2) : par étudiant de la promotion, ses présences, ses exercices,
+     * la moyenne de ses notes retenues (RG15 v2 : note retenue d'un exercice = moyenne de ses notes rendues),
+     * les relectures qu'il doit encore (RG14) et ses exercices à note provisoire (PARTIELLEMENT_RELU, H12).
+     * Requête native : une moyenne de moyennes par exercice ne s'exprime pas en JPQL.
      */
-    @Query("""
-            select new com.kfokam48.presence.repository.LigneTableau(
-                e.id,
-                e.nom,
-                (select count(p) from Presence p where p.etudiant = e),
-                (select count(x) from Exercice x where x.etudiant = e),
-                (select avg(r.note) from Relecture r where r.exercice.etudiant = e and r.rendueAt is not null),
-                (select count(d) from Relecture d where d.relecteur = e and d.rendueAt is null))
-            from Etudiant e
-            where e.promotion.id = :promotionId
-            order by e.nom
-            """)
-    List<LigneTableau> tableau(@Param("promotionId") Long promotionId);
+    @Query(value = """
+            select e.id as etudiantId,
+                   e.nom as nom,
+                   (select count(*) from presence p where p.etudiant_id = e.id) as presences,
+                   (select count(*) from exercice x where x.etudiant_id = e.id) as exercicesDeposes,
+                   (select avg(n.note_retenue)
+                      from (select avg(cast(r.note as double precision)) as note_retenue
+                              from relecture r join exercice x on x.id = r.exercice_id
+                             where x.etudiant_id = e.id and r.rendue_at is not null
+                             group by x.id) n) as moyenne,
+                   (select count(*) from relecture d where d.relecteur_id = e.id and d.rendue_at is null) as relecturesEnAttente,
+                   (select count(*) from exercice x where x.etudiant_id = e.id and x.statut = 'PARTIELLEMENT_RELU') as notesProvisoires
+              from etudiant e
+             where e.promotion_id = :promotionId
+             order by e.nom
+            """, nativeQuery = true)
+    List<LigneBrute> tableauBrut(@Param("promotionId") Long promotionId);
+
+    default List<LigneTableau> tableau(Long promotionId) {
+        return tableauBrut(promotionId).stream()
+                .map(l -> new LigneTableau(l.getEtudiantId().longValue(), l.getNom(), l.getPresences().longValue(),
+                        l.getExercicesDeposes().longValue(), l.getMoyenne() == null ? null : l.getMoyenne().doubleValue(),
+                        l.getRelecturesEnAttente().longValue(), l.getNotesProvisoires().longValue()))
+                .toList();
+    }
+
+    /** Projection des colonnes de la requête native (types numériques variables selon la base). */
+    interface LigneBrute {
+        Number getEtudiantId();
+
+        String getNom();
+
+        Number getPresences();
+
+        Number getExercicesDeposes();
+
+        Number getMoyenne();
+
+        Number getRelecturesEnAttente();
+
+        Number getNotesProvisoires();
+    }
 }

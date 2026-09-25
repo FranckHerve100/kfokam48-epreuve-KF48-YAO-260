@@ -131,6 +131,7 @@ tbody tr:hover { background: #fafbfe; }
 .pastille-attente { background: var(--attention-fond); color: var(--attention); }
 .pastille-ok { background: var(--succes-fond); color: var(--succes); }
 .pastille-neutre { background: var(--surface-douce); color: var(--texte-doux); }
+.pastille.provisoire { margin-left: 0.4rem; font-size: 0.72rem; }
 
 /* Listes */
 .liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }

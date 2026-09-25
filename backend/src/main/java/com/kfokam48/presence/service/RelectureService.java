@@ -9,6 +9,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.kfokam48.presence.domain.Exercice;
 import com.kfokam48.presence.domain.Relecture;
 import com.kfokam48.presence.dto.RelectureAssigneeDto;
 import com.kfokam48.presence.dto.RelectureDemande;
@@ -54,7 +55,18 @@ public class RelectureService {
             throw new RelectureDejaRendueException();
         }
         relecture.rendre(demande.note(), demande.commentaire(), Instant.now(horloge).truncatedTo(ChronoUnit.SECONDS));
-        relecture.getExercice().marquerRelu();
+        mettreAJourStatut(relecture.getExercice());
+    }
+
+    /** v2 (#52) : RELU quand les deux relectures sont rendues, sinon PARTIELLEMENT_RELU (note provisoire, D4). */
+    private void mettreAJourStatut(Exercice exercice) {
+        List<Relecture> toutes = relectures.findByExerciceId(exercice.getId());
+        long rendues = toutes.stream().filter(Relecture::estRendue).count();
+        if (rendues >= AssignationService.RELECTEURS_PAR_EXERCICE) {
+            exercice.marquerRelu();
+        } else {
+            exercice.marquerPartiellementRelu();
+        }
     }
 
     /** Relectures assignées à un étudiant, en attente d'abord puis les plus récentes (404 si l'étudiant n'existe pas). */

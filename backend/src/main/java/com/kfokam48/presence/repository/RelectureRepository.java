@@ -12,4 +12,7 @@ public interface RelectureRepository extends JpaRepository<Relecture, Long> {
     long countByRelecteurIdAndExerciceSessionId(Long relecteurId, Long sessionId);
 
     List<Relecture> findByRelecteurIdOrderByAssigneeAtDesc(Long relecteurId);
+
+    /** Relectures d'un exercice : deux au plus (RG9 v2). */
+    List<Relecture> findByExerciceId(Long exerciceId);
 }

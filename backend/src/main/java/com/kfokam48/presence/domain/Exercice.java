@@ -59,6 +59,10 @@ public class Exercice extends AbstractAggregateRoot<Exercice> {
         this.statut = StatutExercice.EN_ATTENTE_RELECTURE;
     }
 
+    public void marquerPartiellementRelu() {
+        this.statut = StatutExercice.PARTIELLEMENT_RELU;
+    }
+
     public void marquerRelu() {
         this.statut = StatutExercice.RELU;
     }

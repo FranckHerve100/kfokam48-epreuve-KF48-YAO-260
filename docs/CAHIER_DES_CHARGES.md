@@ -1,7 +1,7 @@
 # Cahier des charges — KFOKAM48 Présence & Relecture
 
 **Auteur :** TCHANA Franck Hervé · KF48-YAO-260
-**Version :** 1 · **Date :** 25/09/2026
+**Version :** 2 · **Date :** 25/09/2026 (v2 : changement de besoin de l'étape 3, deux relecteurs)
 **Frontend choisi :** React (Vite + TypeScript), parce que trois écrans simples n'ont besoin ni du rendu serveur de Next.js ni de l'outillage d'Angular : c'est l'option la plus légère à construire, tester et démarrer depuis un clone vierge.
 
 ---
@@ -43,7 +43,8 @@ L'objectif est de rendre l'assiduité et la relecture entre pairs traçables, é
 **Explicitement exclu :**
 - Authentification et mots de passe (Q1) : l'étudiant choisit son nom dans une liste.
 - Gestion des promotions et des étudiants (création, import CSV) : ils sont fournis par les données de démonstration.
-- Plusieurs relecteurs par exercice (Q6), ou une réassignation manuelle par le formateur.
+- Plus de deux relecteurs par exercice, ou une réassignation manuelle par le formateur. *(v2 : Q6 « un seul relecteur » est remplacée par la demande de l'étape 3 : deux relecteurs.)*
+- EF10 et EF11, sortis du périmètre de la v1.0 pour absorber le changement de l'étape 3 (voir §10).
 - Notifications (e-mail, SMS, push).
 - Soin graphique et CSS avancé (non évalué).
 - Hébergement public en ligne : l'application se lance en local.
@@ -56,9 +57,9 @@ L'objectif est de rendre l'assiduité et la relecture entre pairs traçables, é
 | EF1 | Le formateur ouvre une session et obtient un code de présence | Quand j'ouvre une session pour une promotion existante à 10h00, alors je reçois un code unique parmi les sessions ouvertes et une expiration à 10h15 (201) | Must |
 | EF2 | L'étudiant marque sa présence avec le code | Quand je choisis mon nom et saisis un code valide non expiré, alors ma présence est créée avec la source `ETUDIANT` et apparaît dans le tableau du formateur ; code expiré → 410, déjà présent → 409, code inconnu → 400 | Must |
 | EF3 | L'étudiant dépose le lien de son exercice | Quand je dépose un lien https valide sur une session non clôturée, alors je reçois 201 avec l'identifiant et le statut de l'exercice ; lien invalide → 400, second dépôt → 409 | Must |
-| EF4 | Un relecteur est assigné au hasard à chaque exercice déposé | Quand un exercice est déposé et qu'au moins un autre étudiant est présent, alors un seul relecteur, différent de l'auteur, lui est assigné et le statut passe à `EN_ATTENTE_RELECTURE` ; sinon le statut reste `DEPOSE` jusqu'à la prochaine présence | Must |
-| EF5 | Le relecteur rend une note et un commentaire | Quand j'envoie une note entière de 0 à 20 sur une relecture qui m'est assignée, alors je reçois 200 et l'exercice passe à `RELU` ; note hors bornes ou décimale → 400, mon propre exercice → 403, second envoi → 409 | Must |
-| EF6 | Le formateur voit le tableau de sa promotion | Quand j'ouvre le tableau d'une promotion, alors je vois pour chaque étudiant son nombre de présences, ses exercices déposés, la moyenne des notes reçues calculée par l'API et ses relectures en attente ; promotion inconnue → 404 | Must |
+| EF4 | Deux relecteurs sont assignés au hasard à chaque exercice déposé (v2) | Quand un exercice est déposé et qu'au moins deux autres étudiants sont présents, alors deux relecteurs différents, jamais l'auteur, lui sont assignés et le statut passe à `EN_ATTENTE_RELECTURE` ; s'il n'y en a qu'un, il est assigné et le second est tiré à une prochaine présence ; s'il n'y en a aucun, le statut reste `DEPOSE` | Must |
+| EF5 | Le relecteur rend une note et un commentaire | Quand j'envoie une note entière de 0 à 20 sur une relecture qui m'est assignée, alors je reçois 200 ; l'exercice passe à `PARTIELLEMENT_RELU` à la première note et à `RELU` à la seconde (v2) ; note hors bornes ou décimale → 400, mon propre exercice → 403, second envoi → 409 | Must |
+| EF6 | Le formateur voit le tableau de sa promotion | Quand j'ouvre le tableau d'une promotion, alors je vois pour chaque étudiant son nombre de présences, ses exercices déposés, la moyenne de ses notes retenues calculée par l'API, signalée provisoire tant qu'une note ne repose que sur une relecture (v2), et ses relectures en attente ; promotion inconnue → 404 | Must |
 | EF7 | Le formateur ajoute une présence à la main | Quand j'ajoute la présence d'un étudiant sur une session non clôturée, même après expiration du code, alors elle est créée avec la source `FORMATEUR` et le tableau l'indique | Should |
 | EF8 | L'étudiant est bloqué après 5 codes erronés | Quand un étudiant saisit un 5e code erroné consécutif, alors toute nouvelle saisie dans les 2 minutes renvoie 400 `CODE_BLOQUE`, même avec le bon code | Should |
 | EF9 | Le formateur clôture une session | Quand je clôture une session, alors les dépôts et les ajouts de présence sur cette session sont refusés (409), et les relectures en attente restent visibles au tableau | Should |
@@ -90,13 +91,13 @@ L'objectif est de rendre l'assiduité et la relecture entre pairs traçables, é
 | RG6 | Un étudiant ne dépose qu'un exercice par session ; un second dépôt renvoie 409 `EXERCICE_DEJA_DEPOSE` | Contrat |
 | RG7 | Le dépôt d'un exercice est possible jusqu'à la clôture de la session, même après expiration du code | Q12 |
 | RG8 | Le lien d'un exercice peut être remplacé tant qu'aucune relecture n'a été rendue et que la session n'est pas clôturée | Q13 |
-| RG9 | Un exercice a un seul relecteur | Q6 |
-| RG10 | Le relecteur est tiré au hasard parmi les étudiants présents à la session, jamais l'auteur ; le moins chargé en relectures est choisi en premier, puis au hasard entre ex æquo ; relire son propre exercice renvoie 403 `AUTO_RELECTURE` | Q5, Q7 |
+| RG9 | Un exercice a deux relecteurs différents *(v2, remplace « un seul relecteur », Q6)* | Changement de besoin, étape 3 |
+| RG10 | Chaque relecteur est tiré au hasard parmi les étudiants présents à la session, jamais l'auteur ni un relecteur déjà assigné au même exercice ; le moins chargé en relectures est choisi en premier, puis au hasard entre ex æquo ; relire son propre exercice renvoie 403 `AUTO_RELECTURE` | Q5, Q7 |
 | RG11 | Une note est un entier compris entre 0 et 20 ; sinon 400 `NOTE_INVALIDE` | Q9 |
 | RG12 | Une note est définitive dès son envoi ; un second envoi renvoie 409 `RELECTURE_DEJA_RENDUE` | Q15, contrat |
 | RG13 | L'étudiant relu voit la note et le commentaire, jamais l'identité du relecteur | Q8 |
 | RG14 | Un exercice non relu reste « en attente », sans limite de temps, et reste visible au tableau | Q11 |
-| RG15 | La moyenne d'un étudiant est calculée par l'API sur les notes reçues, arrondie à 2 décimales ; elle vaut `null` s'il n'a reçu aucune note | Q16, F3 |
+| RG15 | La note retenue d'un exercice est la moyenne des notes rendues par ses relecteurs ; tant qu'une seule des deux est rendue, cette note est retenue mais **provisoire**. La moyenne d'un étudiant est la moyenne des notes retenues de ses exercices, calculée par l'API, arrondie à 2 décimales, signalée provisoire si l'une d'elles l'est ; elle vaut `null` s'il n'a reçu aucune note *(v2)* | Q16, F3, étape 3 |
 | RG16 | Le lien d'un exercice est une URL `http` ou `https` valide ; sinon 400 `LIEN_INVALIDE` | Contrat |
 | RG17 | Toute erreur suit le format `{ code, message }` ; un champ obligatoire absent renvoie 400 `CHAMP_MANQUANT` | Contrat |
 | RG18 | Seul un étudiant de la promotion de la session peut y marquer sa présence ou y déposer ; sinon 400 `HORS_PROMOTION` | Hypothèse H6 |
@@ -107,7 +108,7 @@ L'objectif est de rendre l'assiduité et la relecture entre pairs traçables, é
 
 | Point | Réponse client (Qx) ou hypothèse | Décision retenue | Conséquence |
 |---|---|---|---|
-| H1 — Aucun relecteur éligible (le trou) | Q7 choisit parmi les présents, Q12 autorise un dépôt tardif ; personne n'a prévu le cas où l'auteur est seul présent, ou n'était pas présent du tout | Tirage au dépôt parmi les présents sauf l'auteur, en commençant par le moins chargé ; si personne n'est éligible, l'exercice reste `DEPOSE` et le tirage est relancé à chaque nouvelle présence sur la session | Statut `DEPOSE` ajouté avant `EN_ATTENTE_RELECTURE` (diagramme D4) ; `relecture.relecteur_id` est rempli au tirage |
+| H1 — Aucun relecteur éligible (le trou) | Q7 choisit parmi les présents, Q12 autorise un dépôt tardif ; personne n'a prévu le cas où l'auteur est seul présent, ou n'était pas présent du tout | Tirage au dépôt parmi les présents sauf l'auteur, en commençant par le moins chargé ; si personne n'est éligible, l'exercice reste `DEPOSE` et le tirage est relancé à chaque nouvelle présence sur la session. *v2 : la relance vaut aussi pour le second relecteur quand un seul était éligible* | Statut `DEPOSE` ajouté avant `EN_ATTENTE_RELECTURE` (diagramme D4) ; une ligne `relecture` par relecteur, créée au tirage |
 | H2 — « Fin de session » et « clôture » | Q3 parle de fin, Q10 et Q12 de clôture par le formateur | Deux notions distinctes : l'expiration du code (ouverture + 15 min) arrête le pointage étudiant ; la clôture explicite par le formateur arrête les dépôts et les ajouts de présence, et aussi le pointage étudiant si elle intervient avant l'expiration (410 `CODE_EXPIRE`) | Colonne `session.cloture_at` nullable ; nouvelle opération `POST /api/sessions/{id}/cloture` |
 | H3 — « Personne n'a commencé à relire » | Q13 ; la relecture est un envoi unique, il n'existe pas d'état « en cours » | « Commencé » = relecture rendue. Remplacement du lien possible tant que la note n'est pas envoyée | Nouvelle opération `PUT /api/exercices/{id}` ; 409 `EXERCICE_EN_RELECTURE` |
 | H4 — Réponse au blocage | Q4 demande un blocage de 2 min ; le contrat ne prévoit aucun code pour ce cas et impose de garder les codes de statut de `POST /api/presences` (201, 400, 409, 410) | Compteur d'erreurs par étudiant ; réponse 400 avec `code = CODE_BLOQUE`. 429 aurait été plus précis, mais il aurait ajouté un code de statut à une opération imposée | Colonnes `erreurs_code` et `bloque_jusqu_a` sur `etudiant` (D2) ; message dédié sur l'écran étudiant |
@@ -119,10 +120,13 @@ L'objectif est de rendre l'assiduité et la relecture entre pairs traçables, é
 | H10 — Moyenne sans note | Q16 demande une moyenne | `null` si aucune note, affichée « — » ; arrondie à 2 décimales | Aucun calcul côté frontend (F3) |
 | H11 — Qui envoie la relecture ? | Le contrat prévoit 403 « relecture de son propre exercice » mais le corps imposé `{ note, commentaire }` ne dit pas qui envoie | En-tête **optionnel** `X-Etudiant-Id` sur `POST /api/relectures/{id}` : le corps et les codes de statut imposés restent intacts. S'il est présent : 403 `AUTO_RELECTURE` si c'est l'auteur, 403 `RELECTEUR_NON_ASSIGNE` si ce n'est pas le relecteur tiré. Le frontend l'envoie toujours | Un appel strictement conforme au contrat d'origine reste accepté |
 
+| H12 — Moyenne d'un étudiant avec des notes provisoires (v2) | Étape 3 : « si un seul des deux a rendu, on affiche sa note en attendant, mais marquée comme provisoire » | La moyenne de l'étudiant compte les notes provisoires (sinon un relecteur retardataire effacerait la note) et le tableau l'indique par `moyenneProvisoire` | Champ `moyenneProvisoire` ajouté aux lignes de `GET /api/tableau` ; mention « provisoire » à l'écran formateur |
+
 **Contradictions relevées :**
 
 | Réponses en conflit | Ce que j'ai choisi | Pourquoi |
 |---|---|---|
+| Q6 (« un seul relecteur par exercice ») contre la demande de l'étape 3 (« chaque exercice est relu par deux pairs différents, la note retenue est la moyenne des deux ») | **La demande de l'étape 3** : deux relecteurs (RG9, RG10), note retenue = moyenne, provisoire tant qu'une seule est rendue (RG15). Nouveau statut `PARTIELLEMENT_RELU` (D4) | C'est un changement de besoin explicite du client, postérieur à Q6 : un relecteur qui ne rend rien laissait l'étudiant sans note. Les exercices déjà `RELU` avec un seul relecteur avant la migration V2 restent `RELU` : leur note est définitive (RG12) |
 | Q10 (« le relecteur peut corriger sa note tant que la session n'est pas clôturée ») contre Q15 (« une fois validée, c'est fini, il ne peut plus revenir ») | **Q15** : la note est définitive dès l'envoi (RG12) | Le contrat imposé prévoit déjà « 409 relecture déjà rendue » sur `POST /api/relectures/{id}` : suivre Q10 aurait contredit le contrat, qui est non négociable (B2). Q15 est aussi la règle la plus équitable, comme le dit le client lui-même |
 | Q3 (« on ne peut pas marquer sa présence après la fin de la session ») contre Q14 (« le formateur peut ajouter une présence à la main ») | Q3 s'applique à l'étudiant ; le formateur peut ajouter une présence jusqu'à la clôture, marquée `FORMATEUR` (RG5) | Q14 décrit un cas réel (téléphone en panne) qui arrive précisément après l'expiration du code ; la source `FORMATEUR` garde la trace demandée |
 
@@ -190,7 +194,9 @@ L'objectif est de rendre l'assiduité et la relecture entre pairs traçables, é
 | 5. Épreuve Git | Second dépôt, cinq situations du README, `push --all` | Push de toutes les branches |
 | 6. Soumission | Vérification des deux liens en navigation privée, relevé des hash complets | `SOUMISSION.md` déposé avant 17h30 |
 
-**Si je prends du retard :** je sacrifie dans cet ordre EF11 (Could), puis EF10, EF9, EF8, EF7 (Should), en le notant dans le journal et dans les issues concernées. Je ne sacrifie jamais les jalons, les tests B6, le README de démarrage, l'étape 3 ni la soumission. Je vise le jalon v0.1 à mi-journée au plus tard, pour garder du temps pour l'enveloppe.
+**Si je prends du retard :** je sacrifie dans cet ordre EF11 (Could), puis EF10, EF9, EF8, EF7 (Should), en le notant dans le journal et dans les issues concernées.
+
+**Re-priorisation de l'étape 3 (v2).** Le passage à deux relecteurs (EF4, EF5, EF6, RG9, RG10, RG15 ; issues #52, #53) est un Must qui arrive tard. Pour l'absorber, **EF11 (Could) et EF10 (Should) sortent du périmètre de la v1.0** : EF10 aurait dû être refaite (note provisoire, deux commentaires) alors que la note reste consultable par le formateur ; EF11 est la seule Could. EF7, EF8, EF9 restent prévues pour la v1.0. Je ne sacrifie jamais les jalons, les tests B6, le README de démarrage, l'étape 3 ni la soumission. Je vise le jalon v0.1 à mi-journée au plus tard, pour garder du temps pour l'enveloppe.
 
 **Definition of Done — un ticket est terminé quand :**
 - ses critères d'acceptation sont couverts par des tests automatisés qui passent, nommés d'après les RG concernées ;
@@ -207,3 +213,4 @@ L'objectif est de rendre l'assiduité et la relecture entre pairs traçables, é
 | Version | Quand | Ce qui a changé et pourquoi |
 |---|---|---|
 | 1 | 25/09/2026, étape 1 | Version initiale |
+| 2 | 25/09/2026, étape 3 | **Conséquence du changement de besoin de l'enveloppe** (deux relecteurs, note = moyenne, provisoire si une seule) : EF4, EF5, EF6, RG9, RG10, RG15, H1, nouvelle hypothèse H12, contradiction Q6 tranchée, §3 et §10 (EF10 et EF11 sortis du périmètre) |

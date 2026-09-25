@@ -10,10 +10,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
-/** Relecture d'un exercice par un étudiant tiré au sort (RG9, RG10). Créée au tirage. */
+/** Relecture d'un exercice par un étudiant tiré au sort (RG9, RG10) ; deux par exercice (v2). Créée au tirage. */
 @Entity
 @Table(name = "relecture")
 public class Relecture {
@@ -22,8 +21,9 @@ public class Relecture {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "exercice_id", nullable = false, unique = true)
+    /** Deux relectures au plus par exercice, par deux relecteurs différents (RG9 v2, migration V2). */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "exercice_id", nullable = false)
     private Exercice exercice;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

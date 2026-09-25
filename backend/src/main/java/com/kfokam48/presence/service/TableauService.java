@@ -54,6 +54,7 @@ public class TableauService {
                 ? null
                 : BigDecimal.valueOf(ligne.moyenne()).setScale(2, RoundingMode.HALF_UP);
         return new LigneTableauDto(ligne.etudiantId(), ligne.nom(), ligne.presences().intValue(),
-                ligne.exercicesDeposes().intValue(), moyenne, ligne.relecturesEnAttente().intValue());
+                ligne.exercicesDeposes().intValue(), moyenne, ligne.relecturesEnAttente().intValue(),
+                moyenne != null && ligne.notesProvisoires() > 0);
     }
 }

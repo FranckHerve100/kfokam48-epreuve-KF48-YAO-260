@@ -28,7 +28,7 @@ export interface Presence {
   source: 'ETUDIANT' | 'FORMATEUR'
 }
 
-export type StatutExercice = 'DEPOSE' | 'EN_ATTENTE_RELECTURE' | 'RELU'
+export type StatutExercice = 'DEPOSE' | 'EN_ATTENTE_RELECTURE' | 'PARTIELLEMENT_RELU' | 'RELU'
 
 export interface ExerciceDepose {
   id: number
@@ -49,4 +49,6 @@ export interface LigneTableau {
   exercicesDeposes: number
   moyenne: number | null
   relecturesEnAttente: number
+  /** Vrai si la moyenne compte une note qui ne repose encore que sur une relecture sur deux (RG15, H12) */
+  moyenneProvisoire?: boolean
 }

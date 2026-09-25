@@ -32,14 +32,15 @@ class TableauControllerTest {
     @Test
     void EF6_tableau_renvoie200AvecMoyenneADeuxDecimalesEtNulle() throws Exception {
         when(tableauService.tableau("1")).thenReturn(List.of(
-                new LigneTableauDto(10L, "Abena", 3, 2, new BigDecimal("14.00"), 0),
-                new LigneTableauDto(11L, "Boris", 1, 0, null, 1)));
+                new LigneTableauDto(10L, "Abena", 3, 2, new BigDecimal("14.00"), 0, true),
+                new LigneTableauDto(11L, "Boris", 1, 0, null, 1, false)));
 
         mvc.perform(get("/api/tableau").param("promotionId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].moyenne").value(14.00))
                 .andExpect(jsonPath("$[1].moyenne").isEmpty())
-                .andExpect(jsonPath("$[1].relecturesEnAttente").value(1));
+                .andExpect(jsonPath("$[1].relecturesEnAttente").value(1))
+                .andExpect(jsonPath("$[0].moyenneProvisoire").value(true));
     }
 
     @Test

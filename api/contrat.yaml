@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Contrat imposé — Épreuve finale KFOKAM48
-  version: '1.0'
+  version: '1.0'  # imposée ; contenu complété en v2 (étape 3), voir la description
   description: |
     Les cinq opérations décrites ici doivent exister EXACTEMENT ainsi :
     mêmes chemins, mêmes verbes, mêmes codes de statut, même format d'erreur.
@@ -15,6 +15,13 @@ info:
     `code`, et l'en-tête optionnel `X-Etudiant-Id` sur `POST /api/relectures/{id}` (H11).
     Un cas non prévu par le contrat réutilise un code de statut existant et se
     distingue par la valeur de `code` (cahier des charges §8).
+
+    ## Version 2 (étape 3, changement de besoin : deux relecteurs par exercice)
+
+    Seul ajout : le champ `moyenneProvisoire` des lignes de `GET /api/tableau` (vrai si la moyenne
+    compte une note retenue qui ne repose encore que sur une relecture, RG15). Aucun chemin, verbe,
+    code de statut ni champ obligatoire des opérations imposées n'est modifié. Un exercice peut aussi
+    avoir le statut `PARTIELLEMENT_RELU` (une note rendue sur deux, diagramme D4).
 
     ## Catalogue des valeurs de `code`
 
@@ -194,7 +201,7 @@ paths:
                     format: int64
                   statut:
                     type: string
-                    # DEPOSE ou EN_ATTENTE_RELECTURE (diagramme D4)
+                    # DEPOSE ou EN_ATTENTE_RELECTURE (diagramme D4) ; ensuite PARTIELLEMENT_RELU puis RELU (v2)
         '400':
           $ref: '#/components/responses/Erreur'
           # LIEN_INVALIDE
@@ -288,6 +295,9 @@ paths:
                       nullable: true
                     relecturesEnAttente:
                       type: integer
+                    # ajout v2 (étape 3) : la moyenne compte au moins une note provisoire (RG15, H12)
+                    moyenneProvisoire:
+                      type: boolean
         '404':
           $ref: '#/components/responses/Erreur'
           # PROMOTION_INCONNUE (aussi si promotionId est absent ou non numérique)

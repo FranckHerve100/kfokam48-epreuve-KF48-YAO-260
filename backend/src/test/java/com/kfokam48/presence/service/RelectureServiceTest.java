@@ -54,15 +54,33 @@ class RelectureServiceTest {
         exercice.passerEnAttenteDeRelecture();
         relecture = avecId(new Relecture(exercice, relecteur, MAINTENANT), 700L);
         when(relectures.findById(700L)).thenReturn(Optional.of(relecture));
+        when(relectures.findByExerciceId(500L)).thenReturn(List.of(relecture, secondeRelecture()));
     }
 
+    /** Second relecteur de l'exercice (RG9 v2, #52), pas encore rendue. */
+    private Relecture secondeRelecture() {
+        return avecId(new Relecture(exercice, avecId(new Etudiant("Carine", promotion), 12L), MAINTENANT), 701L);
+    }
+
+    /** v2 (#52) : la première des deux notes laisse l'exercice PARTIELLEMENT_RELU (note provisoire). */
     @Test
-    void EF5_relecteurAssigne_noteEnregistreeEtExerciceRelu() {
+    void EF5_premiereDesDeuxNotes_exercicePartiellementRelu() {
         service.rendre(700L, new RelectureDemande(14, "Bien structuré"), 11L);
 
         assertThat(relecture.getNote()).isEqualTo(14);
         assertThat(relecture.getCommentaire()).isEqualTo("Bien structuré");
         assertThat(relecture.getRendueAt()).isEqualTo(MAINTENANT);
+        assertThat(exercice.getStatut()).isEqualTo(StatutExercice.PARTIELLEMENT_RELU);
+    }
+
+    @Test
+    void EF5_secondeNote_exerciceRelu() {
+        Relecture autre = secondeRelecture();
+        autre.rendre(16, "Complet", MAINTENANT.minusSeconds(60));
+        when(relectures.findByExerciceId(500L)).thenReturn(List.of(relecture, autre));
+
+        service.rendre(700L, new RelectureDemande(12, "Correct"), 11L);
+
         assertThat(exercice.getStatut()).isEqualTo(StatutExercice.RELU);
     }
 
@@ -71,7 +89,7 @@ class RelectureServiceTest {
         service.rendre(700L, new RelectureDemande(0, "À reprendre"), null);
 
         assertThat(relecture.estRendue()).isTrue();
-        assertThat(exercice.getStatut()).isEqualTo(StatutExercice.RELU);
+        assertThat(exercice.getStatut()).isEqualTo(StatutExercice.PARTIELLEMENT_RELU);
     }
 
     @Test
