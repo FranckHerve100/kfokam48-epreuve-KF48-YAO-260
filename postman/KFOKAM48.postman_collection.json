@@ -188,6 +188,253 @@
       ]
     },
     {
+      "name": "01-Référentiel",
+      "item": [
+        {
+          "name": "Promotions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "const promotions = pm.response.json();",
+                  "pm.test('liste { id, nom }', () => promotions.forEach(p => pm.expect(p).to.have.all.keys('id', 'nom')));",
+                  "const yaounde = promotions.find(p => p.nom === 'KF48 Yaoundé');",
+                  "pm.test('promotion de démonstration présente', () => pm.expect(yaounde).to.be.an('object'));",
+                  "pm.collectionVariables.set('promotionId', yaounde.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/promotions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "promotions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sessions de la promotion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "const sessions = pm.response.json();",
+                  "pm.test('champs du contrat', () => sessions.forEach(s => pm.expect(s).to.have.all.keys('id', 'titre', 'code', 'ouvertureAt', 'expirationAt', 'clotureAt')));",
+                  "pm.test('session de démonstration EXPR22', () => pm.expect(sessions.map(s => s.code)).to.include('EXPR22'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/promotions/{{promotionId}}/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "promotions",
+                "{{promotionId}}",
+                "sessions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sessions d'une promotion inconnue → 404 PROMOTION_INCONNUE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 404', () => pm.response.to.have.status(404));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code PROMOTION_INCONNUE', () => pm.expect(corps.code).to.eql('PROMOTION_INCONNUE'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/promotions/999999/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "promotions",
+                "999999",
+                "sessions"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02-Sessions",
+      "item": [
+        {
+          "name": "Ouvrir une session → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 201', () => pm.response.to.have.status(201));",
+                  "const session = pm.response.json();",
+                  "pm.test('champs du contrat', () => pm.expect(session).to.have.all.keys('id', 'code', 'ouvertureAt', 'expirationAt'));",
+                  "pm.test('code de 6 caractères sans ambiguïté (H5)', () => pm.expect(session.code).to.match(/^[A-HJ-NP-Z2-9]{6}$/));",
+                  "pm.test('expiration 15 min après l\\'ouverture (RG1)', () => pm.expect(new Date(session.expirationAt) - new Date(session.ouvertureAt)).to.eql(15 * 60 * 1000));",
+                  "pm.collectionVariables.set('sessionId', session.id);",
+                  "pm.collectionVariables.set('sessionCode', session.code);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titre\": \"Parcours Postman\",\n  \"promotionId\": {{promotionId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Titre absent → 400 CHAMP_MANQUANT (RG17)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400', () => pm.response.to.have.status(400));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code CHAMP_MANQUANT', () => pm.expect(corps.code).to.eql('CHAMP_MANQUANT'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"promotionId\": {{promotionId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Promotion inexistante → 400 PROMOTION_INCONNUE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400', () => pm.response.to.have.status(400));",
+                  "const corps = pm.response.json();",
+                  "pm.test('code PROMOTION_INCONNUE', () => pm.expect(corps.code).to.eql('PROMOTION_INCONNUE'));",
+                  "pm.test('format { code, message } uniquement', () => pm.expect(Object.keys(corps).sort()).to.eql(['code', 'message']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titre\": \"Cours\",\n  \"promotionId\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "99-Erreurs",
       "item": [
         {
