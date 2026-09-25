@@ -19,6 +19,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.kfokam48.presence.dto.ErreurDto;
 
 /**
@@ -65,6 +66,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErreurDto> illisible(HttpMessageNotReadableException exception) {
+        if (exception.getCause() instanceof MismatchedInputException mauvaisType
+                && mauvaisType.getPath().stream().anyMatch(champ -> "note".equals(champ.getFieldName()))) {
+            NoteInvalideException noteInvalide = new NoteInvalideException();
+            return erreur(noteInvalide.getStatut(), noteInvalide.getCode(), noteInvalide.getMessage());
+        }
         return erreur(HttpStatus.BAD_REQUEST, REQUETE_INVALIDE,
                 "Le corps de la requête est absent, n'est pas un JSON valide ou contient un champ mal typé.");
     }
