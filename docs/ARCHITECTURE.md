@@ -141,6 +141,17 @@ Le contrat de référence est [`api/contrat.yaml`](../api/contrat.yaml). Les 5 o
 
 **Erreurs.** Toutes les erreurs ont le format `{ "code": "CODE_EXPIRE", "message": "..." }`. Sur les opérations imposées, les cas ajoutés réutilisent les codes de statut du contrat et se distinguent par la valeur de `code`.
 
+**Documentation et observabilité.**
+
+| URL | Contenu |
+|---|---|
+| `/swagger-ui.html` | Swagger UI avec deux définitions : « Contrat imposé » (`/contrat.yaml`, copié de `api/contrat.yaml` au build) et « Implémentation » (`/v3/api-docs`, générée par springdoc) |
+| `/actuator/health` (+ `/liveness`, `/readiness`) | Santé de l'application et de la base, utilisée par les healthchecks Docker |
+| `/actuator/info` | Version (build-info Maven) et commit Git (`git-commit-id-maven-plugin`) |
+| `/actuator/metrics`, `/actuator/prometheus` | Métriques Micrometer, format Prometheus |
+
+Aucun autre endpoint Actuator n'est exposé. `ContratCouvertureIT` vérifie que chaque opération livrée existe dans les deux définitions.
+
 ## 6. Flux principal de bout en bout
 
 ```mermaid
@@ -254,7 +265,8 @@ flowchart LR
 | Intégration | `@SpringBootTest` + MockMvc (H2) | Chaque ligne de réponse du contrat, statut et `code` |
 | Conformité | `swagger-request-validator-mockmvc` | Chaque réponse validée contre `api/contrat.yaml` |
 | Architecture | ArchUnit | Séparation des couches (B3) |
-| Fumée / non-régression | `scripts/smoke.sh` contre les conteneurs | Parcours complet, en local et en CI |
+| Fumée / non-régression | `scripts/smoke.sh` contre les conteneurs | Santé et un appel par ressource, en local et en CI |
+| API de bout en bout | Postman + Newman (`postman/`) contre `docker compose` | Un test par critère d'acceptation, en local et en CI |
 | Frontend | Vitest + Testing Library | Couche API et états des écrans |
 | Couverture | JaCoCo (≥ 70 % sur `service`) → SonarQube | Quality Gate sur le nouveau code |
 
@@ -310,3 +322,4 @@ kfokam48-epreuve-KF48-YAO-260/
 | Version | Quand | Ce qui a changé et pourquoi |
 |---|---|---|
 | 1 | 25/09/2026, étape 1 | Version initiale |
+| 2 | 25/09/2026, étape 2 (#1) | Spring Boot 3.5.16 : start.spring.io ne propose plus la branche 3.5, le `pom.xml` est écrit à la main (ADR-2 inchangé). Ajout de Swagger UI à deux définitions, des endpoints Actuator `info`, `metrics`, `prometheus` et des tests Postman/Newman |
