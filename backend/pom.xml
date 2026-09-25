@@ -27,6 +27,11 @@
         <sonar-maven-plugin.version>5.8.0.7211</sonar-maven-plugin.version>
         <!-- Couverture minimale exigée sur la couche service (CONTRIBUTING, Definition of Done) -->
         <jacoco.couverture.service>0.70</jacoco.couverture.service>
+        <!-- SonarQube (optionnel, docs/INFRA.md) -->
+        <sonar.projectKey>kfokam48-presence</sonar.projectKey>
+        <sonar.projectName>KFOKAM48 Présence</sonar.projectName>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.exclusions>**/dto/**,**/domain/**,**/config/**,**/*Application*.java</sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
